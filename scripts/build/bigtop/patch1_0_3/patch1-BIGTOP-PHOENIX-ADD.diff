@@ -1,0 +1,225 @@
+Subject: [PATCH] fixed: phoenix编译打包调整
+---
+Index: bigtop-packages/src/common/phoenix/install_phoenix.sh
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/bigtop-packages/src/common/phoenix/install_phoenix.sh b/bigtop-packages/src/common/phoenix/install_phoenix.sh
+--- a/bigtop-packages/src/common/phoenix/install_phoenix.sh	(revision cd9e319a34af99612b8da1fdaad812763e3c857f)
++++ b/bigtop-packages/src/common/phoenix/install_phoenix.sh	(date 1726819087106)
+@@ -39,12 +39,16 @@
+   -n $0 \
+   -o '' \
+   -l 'prefix:' \
++  -l 'bin-dir:' \
++  -l 'conf-dir:' \
+   -l 'doc-dir:' \
++  -l 'etc-dir:' \
++  -l 'examples-dir:' \
+   -l 'lib-dir:' \
++  -l 'man-dir:' \
++  -l 'tar-name:' \
++  -l 'var-dir:' \
+   -l 'installed-lib-dir:' \
+-  -l 'bin-dir:' \
+-  -l 'examples-dir:' \
+-  -l 'conf-dir:' \
+   -l 'build-dir:' -- "$@")
+
+ if [ $? != 0 ] ; then
+@@ -52,6 +56,7 @@
+ fi
+
+ eval set -- "$OPTS"
++set -ex
+ while true ; do
+     case "$1" in
+         --prefix)
+@@ -60,24 +65,39 @@
+         --build-dir)
+         BUILD_DIR=$2 ; shift 2
+         ;;
++        --bin-dir)
++        BIN_DIR=$2 ; shift 2
++        ;;
++        --conf-dir)
++        CONF_DIR=$2 ; shift 2
++        ;;
+         --doc-dir)
+         DOC_DIR=$2 ; shift 2
+         ;;
++        --etc-dir)
++        ETC_DIR=$2 ; shift 2
++        ;;
+         --lib-dir)
+         LIB_DIR=$2 ; shift 2
+         ;;
++        --man-dir)
++        MAN_DIR=$2 ; shift 2
++        ;;
++        --tar-name)
++        TAR_NAME=$2 ; shift 2
++        ;;
++        --tar-name)
++        TAR_NAME=$2 ; shift 2
++        ;;
++        --var-dir)
++        VAR_DIR=$2 ; shift 2
++        ;;
+         --installed-lib-dir)
+         INSTALLED_LIB_DIR=$2 ; shift 2
+         ;;
+-        --bin-dir)
+-        BIN_DIR=$2 ; shift 2
+-        ;;
+         --examples-dir)
+         EXAMPLES_DIR=$2 ; shift 2
+         ;;
+-        --conf-dir)
+-        CONF_DIR=$2 ; shift 2
+-        ;;
+         --)
+         shift ; break
+         ;;
+@@ -113,12 +133,12 @@
+ install -d -m 0755 $PREFIX/var/lib/phoenix
+ install -d -m 0755 $PREFIX/var/log/phoenix
+
+-cp $BUILD_DIR/*.jar $PREFIX/$LIB_DIR/
+-cp -r $BUILD_DIR/bin $PREFIX/$LIB_DIR/
++cp $BUILD_DIR/$TAR_NAME/build/*.jar $PREFIX/$LIB_DIR/
++cp -r $BUILD_DIR/$TAR_NAME/bin $PREFIX/$LIB_DIR/
+ chmod 755 $PREFIX/$BIN_DIR/*.py
+
+-cp -a $BUILD_DIR/{LICENSE,NOTICE} $PREFIX/$DOC_DIR/
+-cp -ra $BUILD_DIR/examples $PREFIX/$LIB_DIR/
++cp -a $BUILD_DIR/$TAR_NAME/{LICENSE,NOTICE} $PREFIX/$DOC_DIR/
++cp -ra $BUILD_DIR/$TAR_NAME/examples $PREFIX/$LIB_DIR/
+
+ # Remove the executable bit from jars to avoid lintian warnings
+ find $PREFIX/$LIB_DIR -name '*.jar' -exec chmod a-x {} \;
+Index: bigtop-packages/src/rpm/phoenix/SPECS/phoenix.spec
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/bigtop-packages/src/rpm/phoenix/SPECS/phoenix.spec b/bigtop-packages/src/rpm/phoenix/SPECS/phoenix.spec
+--- a/bigtop-packages/src/rpm/phoenix/SPECS/phoenix.spec	(revision cd9e319a34af99612b8da1fdaad812763e3c857f)
++++ b/bigtop-packages/src/rpm/phoenix/SPECS/phoenix.spec	(date 1726820077788)
+@@ -12,20 +12,25 @@
+ # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ # See the License for the specific language governing permissions and
+ # limitations under the License.
+-%define phoenix_home /usr/lib/%{name}
++%define phoenix_name phoenix
++%define phoenix_pkg_name phoenix%{pkg_name_suffix}
+ %define bin_phoenix %{phoenix_home}/bin
+ %define examples_phoenix %{phoenix_home}/examples
+-%define etc_phoenix_conf %{_sysconfdir}/%{name}/conf
++%define man_dir %{parent_dir}/%{_mandir}
++%define zookeeper_home %{parent_dir}/usr/lib/zookeeper
++%define hadoop_home %{parent_dir}/usr/lib/hadoop
++%define hadoop_mapreduce_home %{parent_dir}/usr/lib/hadoop-mapreduce
++%define hadoop_yarn_home %{parent_dir}/usr/lib/hadoop-yarn
++%define hadoop_hdfs_home %{parent_dir}/usr/lib/hadoop-hdfs
++%define hbase_home %{parent_dir}/usr/lib/hbase
++%define tarball_name %{phoenix_name}-%{phoenix_base_version}
+ %define etc_phoenix_conf_dist %{etc_phoenix_conf}.dist
+-%define var_lib_phoenix /var/lib/%{name}
+-%define var_log_phoenix /var/log/%{name}
+-%define man_dir %{_mandir}
+-%define zookeeper_home /usr/lib/zookeeper
+-%define hadoop_home /usr/lib/hadoop
+-%define hadoop_mapreduce_home /usr/lib/hadoop-mapreduce
+-%define hadoop_yarn_home /usr/lib/hadoop-yarn
+-%define hadoop_hdfs_home /usr/lib/hadoop-hdfs
+-%define hbase_home /usr/lib/hbase
++%define prefix_var_lib_phoenix %{parent_dir}/var/lib/%{phoenix_name}
++%define prefix_var_log_phoenix %{parent_dir}/var/log/%{phoenix_name}
++%define etc_phoenix %{parent_dir}/%{_sysconfdir}/%{phoenix_name}
++%define etc_phoenix_conf %{etc_phoenix}/conf
++%define phoenix_home %{parent_dir}/usr/lib/%{phoenix_name}
++
+ #BIGTOP_PATCH_FILES
+
+ %if  %{?suse_version:1}0
+@@ -45,7 +50,7 @@
+     /usr/lib/rpm/brp-compress ; \
+     %{nil}
+
+-%define doc_phoenix %{_docdir}/%{name}
++%define doc_phoenix %{parent_dir}/%{_docdir}
+ %define alternatives_cmd update-alternatives
+
+ %else
+@@ -67,12 +72,12 @@
+     %{nil}
+ %endif
+
+-%define doc_phoenix %{_docdir}/%{name}-%{phoenix_version}
++%define doc_phoenix %{parent_dir}/%{_docdir}/%{phoenix_name}-%{phoenix_version}
+ %define alternatives_cmd alternatives
+
+ %endif
+
+-Name: phoenix
++Name: %{phoenix_pkg_name}
+ Version: %{phoenix_version}
+ Release: %{phoenix_release}
+ Summary: Phoenix is a SQL skin over HBase and client-embedded JDBC driver.
+@@ -80,7 +85,7 @@
+ Group: Development/Libraries
+ Buildroot: %{_topdir}/INSTALL/%{name}-%{version}
+ License: ASL 2.0
+-Source0: %{name}-%{phoenix_base_version}-src.tar.gz
++Source0: %{phoenix_name}-%{phoenix_base_version}-src.tar.gz
+ Source1: do-component-build
+ Source2: install_phoenix.sh
+ Source3: bigtop.bom
+@@ -109,7 +114,7 @@
+ standard JDBC interface; all the usual interfaces are supported.
+
+ %prep
+-%setup -n %{name}-%{phoenix_base_version}
++%setup -n %{tarball_name}
+ #BIGTOP_PATCH_COMMANDS
+
+ %build
+@@ -118,16 +123,22 @@
+ %install
+ %__rm -rf $RPM_BUILD_ROOT
+ bash %{SOURCE2} \
+-  --build-dir=build \
+-  --doc-dir=%{doc_phoenix} \
+-  --prefix=$RPM_BUILD_ROOT
++    --build-dir=%{_topdir}/BUILD \
++    --bin-dir=%{bin_phoenix} \
++    --doc-dir=%{doc_phoenix} \
++    --etc-dir=%{etc_phoenix} \
++    --lib-dir=%{phoenix_home} \
++    --man-dir=%{man_dir} \
++    --tar-name=%{tarball_name} \
++    --var-dir=%{prefix_var_lib_phoenix} \
++    --prefix=$RPM_BUILD_ROOT
+
+ %pre
+ getent group phoenix >/dev/null || groupadd -r phoenix
+-getent passwd phoenix >/dev/null || useradd -c "Phoenix" -s /sbin/nologin -g phoenix -r -d %{var_lib_phoenix} phoenix 2> /dev/null || :
++getent passwd phoenix >/dev/null || useradd -c "Phoenix" -s /sbin/nologin -g phoenix -r -d %{prefix_var_lib_phoenix} phoenix 2> /dev/null || :
+
+ %post
+-%{alternatives_cmd} --install %{etc_phoenix_conf} %{name}-conf %{etc_phoenix_conf_dist} 30
++%{alternatives_cmd} --install %{etc_phoenix_conf} %{phoenix_name}-conf %{etc_phoenix_conf_dist} 30
+
+ %if  0%{?rhel} >= 8
+ %{alternatives_cmd} --set python /usr/bin/python3
+@@ -136,7 +147,7 @@
+
+ %preun
+ if [ "$1" = 0 ]; then
+-  %{alternatives_cmd} --remove %{name}-conf %{etc_phoenix_conf_dist} || :
++  %{alternatives_cmd} --remove %{phoenix_name}-conf %{etc_phoenix_conf_dist} || :
+ fi
+
+

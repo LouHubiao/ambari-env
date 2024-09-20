@@ -18,7 +18,7 @@
 
 set -ex
 
-echo "############## BUILD BIGTOP_1_0_2 start #############"
+echo "############## BUILD BIGTOP_1_0_3 start #############"
 
 export NEXUS_URL=$(cat /scripts/system/before/nexus/.lock)
 export NEXUS_USERNAME="admin"
@@ -35,10 +35,8 @@ PROJECT_PATH="/opt/modules/bigtop"
 extract_files=(
 )
 #清理原来的文件内容
-#rm -rf "${PROJECT_PATH}/bigtop-packages/src/common/redis" "${PROJECT_PATH}/bigtop-packages/src/rpm/redis"
 # 清理bigtop-select 因为融合了新组件
-#rm -rf "${PROJECT_PATH}/build/redis"  "${PROJECT_PATH}/output/redis"
-rm -rf "${PROJECT_PATH}/build/bigtop-select"  "${PROJECT_PATH}/output/bigtop-select"
+rm -rf "${PROJECT_PATH}/build/phoenix"  "${PROJECT_PATH}/output/phoenix"
 
 # 定义一个函数来解压 .tar.gz 文件
 extract_file() {
@@ -66,8 +64,8 @@ done
 
 # 定义一个包含所有补丁文件路径的数组
 patch_files=(
-  "/scripts/build/bigtop/patch1_0_2/patch0-BOM-COMPONENT-ADD.diff"
-  "/scripts/build/bigtop/patch1_0_2/patch1-BIGTOP-SELECT-ADD.diff"
+  "/scripts/build/bigtop/patch1_0_3/patch0-BOM-COMPONENT-ADD.diff"
+  "/scripts/build/bigtop/patch1_0_3/patch1-BIGTOP-PHOENIX-ADD.diff"
 )
 RPM_PACKAGE="/data/rpm-package/bigtop"
 
@@ -140,14 +138,13 @@ source /opt/rh/devtoolset-7/enable
 
 cd "$PROJECT_PATH"
 gradle \
-  redis-rpm \
-  bigtop-select-rpm \
+  phoenix-rpm \
   -PparentDir=/usr/bigtop \
   -Dbuildwithdeps=true \
   -PpkgSuffix -d
 
 # 定义要处理的目录
-directories=("redis" "bigtop-select")
+directories=("phoenix")
 
 # 遍历每个指定的目录
 for dir in "${directories[@]}"; do
@@ -155,7 +152,7 @@ for dir in "${directories[@]}"; do
     mkdir -p "$RPM_PACKAGE/$dir"
 
     # 查找并复制文件
-    #find "$PROJECT_PATH/output/$dir" -iname '*.rpm' -not -iname '*.src.rpm' -exec cp -rv {} "$RPM_PACKAGE/$dir" \;
+    find "$PROJECT_PATH/output/$dir" -iname '*.rpm' -not -iname '*.src.rpm' -exec cp -rv {} "$RPM_PACKAGE/$dir" \;
 done
 
-echo "############## BUILD BIGTOP_1_0_2 end #############" -d
+echo "############## BUILD BIGTOP_1_0_3 end #############" -d

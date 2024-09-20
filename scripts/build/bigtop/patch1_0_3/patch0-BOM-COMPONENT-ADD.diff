@@ -1,0 +1,26 @@
+Subject: [PATCH] fixed: phoenix 组件包调整
+---
+Index: bigtop.bom
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/bigtop.bom b/bigtop.bom
+--- a/bigtop.bom	(revision cd9e319a34af99612b8da1fdaad812763e3c857f)
++++ b/bigtop.bom	(date 1726812322805)
+@@ -283,6 +283,7 @@
+
+         'phoenix' {
+             name = 'phoenix'
++            rpm_pkg_suffix = "_" + bigtop.base_version.replace(".", "_")
+             relNotes = 'Apache Phoenix: A SQL skin over HBase'
+             version { base = "5.1.2"; pkg = base; release = 1 }
+             tarball {
+@@ -294,6 +295,7 @@
+                 site = "${apache.APACHE_MIRROR}/${download_path}"
+                 archive = "${apache.APACHE_ARCHIVE}/${download_path}"
+             }
++            maven_parallel_build = true
+         }
+
+         'bigtop-groovy' {

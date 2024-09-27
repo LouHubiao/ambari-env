@@ -121,7 +121,7 @@ Bigtop，简化大数据平台的搭建过程。🌐
 1. 克隆本仓库：
 
    ```bash
-   git clone https://gitee.com/janettr/ambari-env.git
+   git clone https://gitee.com/tt-bigdata/ambari-env.git
    cd ambari-env
    ```
 

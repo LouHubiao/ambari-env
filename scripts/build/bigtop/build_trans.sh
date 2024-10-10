@@ -16,33 +16,30 @@
 #
 # Author: JaneTTR
 
-set -e
+set -ex
 
-echo "############## ONE_KEY_BUILD start #############"
-
-echo "1.0.0 版本编译开始"
-bash /scripts/build/bigtop/build.sh
-#bash /scripts/build/ambari/build.sh
-#bash /scripts/build/ambari-infra/build.sh
-#bash /scripts/build/ambari-metrics/build.sh
-echo "1.0.0 版本结束"
-
-echo "1.0.1 版本编译开始"
-bash /scripts/build/ambari/build1_0_1.sh
-bash /scripts/build/bigtop/build1_0_1.sh
-echo "1.0.1 版本编译结束"
-
-echo "1.0.2 版本编译开始"
-bash /scripts/build/ambari/build1_0_2.sh
-bash /scripts/build/bigtop/build1_0_2.sh
-echo "1.0.2 版本编译结束"
-
-echo "1.0.3 版本编译开始"
-bash /scripts/build/ambari/build1_0_3.sh
-bash /scripts/build/bigtop/build1_0_3.sh
-echo "1.0.3 版本编译结束"
-
-#bash /scripts/build/bigtop/build_trans.sh
+echo "############## BUILD BIGTOP_RPM_TRANSFORM start #############"
 
 
-echo "############## ONE_KEY_BUILD end #############"
+
+PROJECT_PATH="/opt/modules/bigtop"
+RPM_PACKAGE="/data/rpm-package/bigtop"
+mkdir -p "$RPM_PACKAGE"
+
+
+
+# 遍历 output 目录下的每个子目录
+for dir in "$PROJECT_PATH"/output/*; do
+    if [ -d "$dir" ]; then
+        # 获取子目录的名称
+        component=$(basename "$dir")
+
+        # 创建目标目录
+        mkdir -p "$RPM_PACKAGE/$component"
+
+        # 查找并复制文件
+        find "$dir" -iname '*.rpm' -not -iname '*.src.rpm' -exec cp -rv {} "$RPM_PACKAGE/$component" \;
+    fi
+done
+
+echo "############## BUILD BIGTOP_RPM_TRANSFORM end #############"

@@ -1,0 +1,67 @@
+Subject: [PATCH] optimized： 优化 redis 的client 下载配置
+---
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/REDIS/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/REDIS/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/REDIS/metainfo.xml
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/REDIS/metainfo.xml	(revision eef11e458f51f75f2bb9f7699fed22a994bf0799)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/REDIS/metainfo.xml	(date 1728375823072)
+@@ -40,18 +40,6 @@
+                         <script>scripts/redis_master.py</script> <!-- Python 脚本 -->
+                         <scriptType>PYTHON</scriptType>
+                     </commandScript>
+-                    <configFiles>
+-                        <configFile>
+-                            <type>env</type>
+-                            <fileName>redis-site.xml</fileName>
+-                            <dictionaryName>redis-site</dictionaryName>
+-                        </configFile>
+-                        <configFile>
+-                            <type>env</type>
+-                            <fileName>redis-env.sh</fileName>
+-                            <dictionaryName>redis-env</dictionaryName>
+-                        </configFile>
+-                    </configFiles>
+                 </component>
+
+                 <!-- Redis 从节点组件 -->
+@@ -65,18 +53,6 @@
+                         <script>scripts/redis_slave.py</script> <!-- Python 脚本 -->
+                         <scriptType>PYTHON</scriptType>
+                     </commandScript>
+-                    <configFiles>
+-                        <configFile>
+-                            <type>env</type>
+-                            <fileName>redis-site.xml</fileName>
+-                            <dictionaryName>redis-site</dictionaryName>
+-                        </configFile>
+-                        <configFile>
+-                            <type>env</type>
+-                            <fileName>redis-env.sh</fileName>
+-                            <dictionaryName>redis-env</dictionaryName>
+-                        </configFile>
+-                    </configFiles>
+                 </component>
+
+                 <!-- Redis 客户端组件 -->
+@@ -90,6 +66,18 @@
+                         <script>scripts/redis_client.py</script> <!-- Python 脚本 -->
+                         <scriptType>PYTHON</scriptType>
+                     </commandScript>
++                    <configFiles>
++                        <configFile>
++                            <type>xml</type>
++                            <fileName>redis-site.xml</fileName>
++                            <dictionaryName>redis-site</dictionaryName>
++                        </configFile>
++                        <configFile>
++                            <type>xml</type>
++                            <fileName>redis-env.sh</fileName>
++                            <dictionaryName>redis-env</dictionaryName>
++                        </configFile>
++                    </configFiles>
+                 </component>
+             </components>
+

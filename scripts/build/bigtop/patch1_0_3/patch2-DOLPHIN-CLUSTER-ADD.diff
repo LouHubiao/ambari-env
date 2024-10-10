@@ -1,0 +1,31 @@
+Subject: [PATCH] feature: 增加dolphinscheduler 3.2.2
+---
+Index: bigtop.bom
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/bigtop.bom b/bigtop.bom
+--- a/bigtop.bom	(revision cd9e319a34af99612b8da1fdaad812763e3c857f)
++++ b/bigtop.bom	(date 1728549714152)
+@@ -506,5 +506,20 @@
+                 archive = site
+             }
+         }
++
++        'dolphinscheduler' {
++            name = 'dolphinscheduler'
++            rpm_pkg_suffix = "_" + bigtop.base_version.replace(".", "_")
++            relNotes = 'Dolphinscheduler v3.2.2 Release'
++            version { base = '3.2.2'; pkg = base; release = 1 }
++            tarball {
++                destination = "${name}-${version.base}.tar.gz"
++                source = "${version.base}.tar.gz"
++            }
++            url {
++                site = "https://ghp.ci/https://github.com/apache/dolphinscheduler/archive/refs/tags/"
++                archive = site
++            }
++        }
+     }
+ }

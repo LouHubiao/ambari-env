@@ -146,16 +146,6 @@ gradle \
   -Dbuildwithdeps=true \
   -PpkgSuffix -d
 
-# 定义要处理的目录
-directories=("redis" "bigtop-select")
 
-# 遍历每个指定的目录
-for dir in "${directories[@]}"; do
-    # 创建目标目录
-    mkdir -p "$RPM_PACKAGE/$dir"
-
-    # 查找并复制文件
-    #find "$PROJECT_PATH/output/$dir" -iname '*.rpm' -not -iname '*.src.rpm' -exec cp -rv {} "$RPM_PACKAGE/$dir" \;
-done
 
 echo "############## BUILD BIGTOP_1_0_2 end #############" -d

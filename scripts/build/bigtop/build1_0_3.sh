@@ -36,7 +36,7 @@ extract_files=(
 )
 #清理原来的文件内容
 # 清理bigtop-select 因为融合了新组件
-rm -rf "${PROJECT_PATH}/build/phoenix"  "${PROJECT_PATH}/output/phoenix"
+#rm -rf "${PROJECT_PATH}/build/phoenix"  "${PROJECT_PATH}/output/phoenix"
 
 # 定义一个函数来解压 .tar.gz 文件
 extract_file() {
@@ -66,6 +66,7 @@ done
 patch_files=(
   "/scripts/build/bigtop/patch1_0_3/patch0-BOM-COMPONENT-ADD.diff"
   "/scripts/build/bigtop/patch1_0_3/patch1-BIGTOP-PHOENIX-ADD.diff"
+  "/scripts/build/bigtop/patch1_0_3/patch2-DOLPHIN-CLUSTER-ADD.diff"
 )
 RPM_PACKAGE="/data/rpm-package/bigtop"
 
@@ -139,20 +140,10 @@ source /opt/rh/devtoolset-7/enable
 cd "$PROJECT_PATH"
 gradle \
   phoenix-rpm \
+  dolphinscheduler-rpm \
   -PparentDir=/usr/bigtop \
   -Dbuildwithdeps=true \
   -PpkgSuffix -d
 
-# 定义要处理的目录
-directories=("phoenix")
-
-# 遍历每个指定的目录
-for dir in "${directories[@]}"; do
-    # 创建目标目录
-    mkdir -p "$RPM_PACKAGE/$dir"
-
-    # 查找并复制文件
-    find "$PROJECT_PATH/output/$dir" -iname '*.rpm' -not -iname '*.src.rpm' -exec cp -rv {} "$RPM_PACKAGE/$dir" \;
-done
 
 echo "############## BUILD BIGTOP_1_0_3 end #############" -d

@@ -138,18 +138,6 @@ gradle \
   -PpkgSuffix
 
 
-# 遍历 output 目录下的每个子目录
-for dir in "$PROJECT_PATH"/output/*; do
-    if [ -d "$dir" ]; then
-        # 获取子目录的名称
-        component=$(basename "$dir")
 
-        # 创建目标目录
-        mkdir -p "$RPM_PACKAGE/$component"
-
-        # 查找并复制文件
-        #find "$dir" -iname '*.rpm' -not -iname '*.src.rpm' -exec cp -rv {} "$RPM_PACKAGE/$component" \;
-    fi
-done
 
 echo "############## BUILD BIGTOP end #############"

@@ -37,6 +37,7 @@ extract_files=(
 #清理原来的文件内容
 # 清理bigtop-select 因为融合了新组件
 #rm -rf "${PROJECT_PATH}/build/phoenix"  "${PROJECT_PATH}/output/phoenix"
+rm -rf "${PROJECT_PATH}/build/bigtop-select"  "${PROJECT_PATH}/output/bigtop-select"
 rm -rf "${PROJECT_PATH}/build/dolphinscheduler"  "${PROJECT_PATH}/output/dolphinscheduler"
 # 定义一个函数来解压 .tar.gz 文件
 extract_file() {
@@ -65,6 +66,7 @@ done
 # 定义一个包含所有补丁文件路径的数组
 patch_files=(
   "/scripts/build/bigtop/patch1_0_3/patch0-BOM-COMPONENT-ADD.diff"
+  "/scripts/build/bigtop/patch1_0_3/patch1-BIGTOP-SELECT-ADD.diff"
 )
 RPM_PACKAGE="/data/rpm-package/bigtop"
 
@@ -137,20 +139,13 @@ source /opt/rh/devtoolset-7/enable
 
 cd "$PROJECT_PATH"
 gradle \
+  bigtop-select-rpm \
   phoenix-rpm \
   dolphinscheduler-rpm \
   -PparentDir=/usr/bigtop \
   -Dbuildwithdeps=true \
-  -PpkgSuffix -d
+  -PpkgSuffix
 
 
 echo "############## BUILD BIGTOP_1_0_3 end #############" -d
 
-
-#nohup gradle dolphinscheduler-rpm   -PparentDir=/usr/bigtop   -Dbuildwithdeps=true   -PpkgSuffix -d > "$(date +%s)_build.log" 2>&1 &
-#
-#gradle redis-rpm   -PparentDir=/usr/bigtop   -Dbuildwithdeps=true   -PpkgSuffix -d
-#gradle dolphinscheduler-rpm   -PparentDir=/usr/bigtop   -Dbuildwithdeps=true   -PpkgSuffix -d
-#
-#gradle redis-srpm   -PparentDir=/usr/bigtop   -Dbuildwithdeps=true   -PpkgSuffix -d
-#gradle dolphinscheduler-srpm   -PparentDir=/usr/bigtop   -Dbuildwithdeps=true   -PpkgSuffix -d

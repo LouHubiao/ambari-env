@@ -1,0 +1,39 @@
+Subject: [PATCH] feature: distro-select 支持 dolphin
+---
+Index: bigtop-packages/src/common/bigtop-select/distro-select
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/bigtop-packages/src/common/bigtop-select/distro-select b/bigtop-packages/src/common/bigtop-select/distro-select
+--- a/bigtop-packages/src/common/bigtop-select/distro-select	(revision cd9e319a34af99612b8da1fdaad812763e3c857f)
++++ b/bigtop-packages/src/common/bigtop-select/distro-select	(date 1728726864740)
+@@ -93,6 +93,11 @@
+     'redis-master': 'redis',
+     'redis-slave': 'redis',
+     'redis-client': 'redis',
++    "dolphinscheduler" : "dolphinscheduler",
++    "dolphin-master" : "dolphinscheduler/master-server",
++    "dolphin-worker" : "dolphinscheduler/worker-server",
++    "dolphin-api" : "dolphinscheduler/api-server",
++    "dolphin-alert" : "dolphinscheduler/alert-server"
+ }
+
+ # Define the aliases and the list of leaves they correspond to
+Index: bigtop-packages/src/common/bigtop-select/conf-select
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/bigtop-packages/src/common/bigtop-select/conf-select b/bigtop-packages/src/common/bigtop-select/conf-select
+--- a/bigtop-packages/src/common/bigtop-select/conf-select	(revision cd9e319a34af99612b8da1fdaad812763e3c857f)
++++ b/bigtop-packages/src/common/bigtop-select/conf-select	(date 1728726778798)
+@@ -36,7 +36,7 @@
+     "spark", "sqoop",
+     "tez", "livy2", "zookeeper", "zeppelin",
+     "hive2", "tez_hive2",
+-    "hive_warehouse_connector", "spark_schema_registry", "flink"
++    "hive_warehouse_connector", "spark_schema_registry", "flink", "dolphinscheduler"
+ )
+ ''' conf link
+ /usr/bigtop/3.2.0/usr/lib/${pname}/conf -> /etc/${pname}/conf -> /etc/alternatives/${pname}-conf -> /usr/bigtop/3.2.0/etc/${pname}/conf.dist.0

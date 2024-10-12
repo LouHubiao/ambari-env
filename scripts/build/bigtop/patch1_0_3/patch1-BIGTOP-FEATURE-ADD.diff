@@ -99,6 +99,105 @@ diff --git a/bigtop-packages/src/common/phoenix/install_phoenix.sh b/bigtop-pack
 
  # Remove the executable bit from jars to avoid lintian warnings
  find $PREFIX/$LIB_DIR -name '*.jar' -exec chmod a-x {} \;
+Index: bigtop-packages/src/common/dolphinscheduler/patch0-DATASOURCE-OPTIMIZED.diff
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/bigtop-packages/src/common/dolphinscheduler/patch0-DATASOURCE-OPTIMIZED.diff b/bigtop-packages/src/common/dolphinscheduler/patch0-DATASOURCE-OPTIMIZED.diff
+new file mode 100644
+--- /dev/null	(date 1728575790414)
++++ b/bigtop-packages/src/common/dolphinscheduler/patch0-DATASOURCE-OPTIMIZED.diff	(date 1728575790414)
+@@ -0,0 +1,89 @@
++Subject: [PATCH] optimized: 增加mysql 驱动
++---
++Index: dolphinscheduler-worker/pom.xml
++IDEA additional info:
++Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
++<+>UTF-8
++===================================================================
++diff --git a/dolphinscheduler-worker/pom.xml b/dolphinscheduler-worker/pom.xml
++--- a/dolphinscheduler-worker/pom.xml	(revision 2ec95b5c2c50d2882d40e07fb13cf38b5f0469b4)
+++++ b/dolphinscheduler-worker/pom.xml	(date 1728530771659)
++@@ -118,6 +118,13 @@
++             <artifactId>zt-zip</artifactId>
++         </dependency>
++
+++        <dependency>
+++            <groupId>mysql</groupId>
+++            <artifactId>mysql-connector-java</artifactId>
+++            <version>8.0.24</version>
+++            <scope>compile</scope>
+++        </dependency>
+++
++     </dependencies>
++
++     <build>
++Index: dolphinscheduler-alert/dolphinscheduler-alert-server/pom.xml
++IDEA additional info:
++Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
++<+>UTF-8
++===================================================================
++diff --git a/dolphinscheduler-alert/dolphinscheduler-alert-server/pom.xml b/dolphinscheduler-alert/dolphinscheduler-alert-server/pom.xml
++--- a/dolphinscheduler-alert/dolphinscheduler-alert-server/pom.xml	(revision 2ec95b5c2c50d2882d40e07fb13cf38b5f0469b4)
+++++ b/dolphinscheduler-alert/dolphinscheduler-alert-server/pom.xml	(date 1728530601997)
++@@ -71,6 +71,13 @@
++             <artifactId>spring-boot-starter-test</artifactId>
++             <scope>test</scope>
++         </dependency>
+++
+++        <dependency>
+++            <groupId>mysql</groupId>
+++            <artifactId>mysql-connector-java</artifactId>
+++            <version>8.0.24</version>
+++            <scope>compile</scope>
+++        </dependency>
++     </dependencies>
++
++     <build>
++Index: dolphinscheduler-api/pom.xml
++IDEA additional info:
++Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
++<+>UTF-8
++===================================================================
++diff --git a/dolphinscheduler-api/pom.xml b/dolphinscheduler-api/pom.xml
++--- a/dolphinscheduler-api/pom.xml	(revision 2ec95b5c2c50d2882d40e07fb13cf38b5f0469b4)
+++++ b/dolphinscheduler-api/pom.xml	(date 1728530716579)
++@@ -236,6 +236,12 @@
++             <groupId>org.apache.dolphinscheduler</groupId>
++             <artifactId>dolphinscheduler-extract-alert</artifactId>
++         </dependency>
+++        <dependency>
+++            <groupId>mysql</groupId>
+++            <artifactId>mysql-connector-java</artifactId>
+++            <version>8.0.24</version>
+++            <scope>compile</scope>
+++        </dependency>
++     </dependencies>
++     <build>
++         <testResources>
++Index: dolphinscheduler-master/pom.xml
++IDEA additional info:
++Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
++<+>UTF-8
++===================================================================
++diff --git a/dolphinscheduler-master/pom.xml b/dolphinscheduler-master/pom.xml
++--- a/dolphinscheduler-master/pom.xml	(revision 2ec95b5c2c50d2882d40e07fb13cf38b5f0469b4)
+++++ b/dolphinscheduler-master/pom.xml	(date 1728530744894)
++@@ -289,6 +289,13 @@
++             <groupId>org.springframework.cloud</groupId>
++             <artifactId>spring-cloud-starter-kubernetes-client-config</artifactId>
++         </dependency>
+++
+++        <dependency>
+++            <groupId>mysql</groupId>
+++            <artifactId>mysql-connector-java</artifactId>
+++            <version>8.0.24</version>
+++            <scope>compile</scope>
+++        </dependency>
++     </dependencies>
++
++     <build>
 Index: bigtop-packages/src/rpm/dolphinscheduler/SPECS/dolphinscheduler.spec
 IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP

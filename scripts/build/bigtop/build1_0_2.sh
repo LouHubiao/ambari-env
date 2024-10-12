@@ -139,12 +139,12 @@ done
 source /opt/rh/devtoolset-7/enable
 
 cd "$PROJECT_PATH"
-gradle \
-  redis-rpm \
-  bigtop-select-rpm \
-  -PparentDir=/usr/bigtop \
-  -Dbuildwithdeps=true \
-  -PpkgSuffix -d
+#gradle \
+#  redis-rpm \
+#  bigtop-select-rpm \
+#  -PparentDir=/usr/bigtop \
+#  -Dbuildwithdeps=true \
+#  -PpkgSuffix -d
 
 
 

@@ -117,25 +117,25 @@ source /opt/rh/devtoolset-7/enable
 
 cd "$PROJECT_PATH"
 
-gradle \
-  bigtop-groovy-rpm \
-  bigtop-jsvc-rpm \
-  bigtop-select-rpm \
-  bigtop-utils-rpm \
-  zookeeper-rpm \
-  hadoop-rpm \
-  flink-rpm \
-  hbase-rpm \
-  hive-rpm \
-  kafka-rpm \
-  spark-rpm \
-  solr-rpm \
-  tez-rpm \
-  zeppelin-rpm \
-  livy-rpm \
-  -PparentDir=/usr/bigtop \
-  -Dbuildwithdeps=true \
-  -PpkgSuffix
+#gradle \
+#  bigtop-groovy-rpm \
+#  bigtop-jsvc-rpm \
+#  bigtop-select-rpm \
+#  bigtop-utils-rpm \
+#  zookeeper-rpm \
+#  hadoop-rpm \
+#  flink-rpm \
+#  hbase-rpm \
+#  hive-rpm \
+#  kafka-rpm \
+#  spark-rpm \
+#  solr-rpm \
+#  tez-rpm \
+#  zeppelin-rpm \
+#  livy-rpm \
+#  -PparentDir=/usr/bigtop \
+#  -Dbuildwithdeps=true \
+#  -PpkgSuffix
 
 
 

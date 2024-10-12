@@ -38,7 +38,7 @@ bash /scripts/build/bigtop/build1_0_2.sh
 echo "1.0.2 版本编译结束"
 
 echo "1.0.3 版本编译开始"
-bash /scripts/build/ambari/build1_0_3.sh
+#bash /scripts/build/ambari/build1_0_3.sh
 bash /scripts/build/bigtop/build1_0_3.sh
 echo "1.0.3 版本编译结束"
 

@@ -1,69 +1,64 @@
-## Ambari+Bigtop 一站式编译和部署解决方案 🚀✨
+# Ambari+Bigtop 一站式编译和部署解决方案 🚀✨
 
-### 项目简介 📚
+## 项目简介 📚
 
-本项目旨在提供一个一站式解决方案，从编译到部署 Ambari+Bigtop。通过本项目，用户可以轻松地在各种环境中安装和配置 Ambari 和
-Bigtop，简化大数据平台的搭建过程。🌐
+本项目提供了一个 **一站式解决方案**，从编译到部署 Ambari+Bigtop，帮助用户轻松搭建大数据平台。通过该项目，你可以 **自己动手完成源码编译
+**，体验一键部署的便利！💻🚀
 
-### 目录 📑
+**关注该项目**，你将能够获得完整的源代码 📂，通过该代码自由定制和扩展项目 🛠️。
 
-- [背景](#背景-)
-- [功能](#功能-)
-- [导航](#导航-)
-- [互动](#互动-)
-- [版本说明](#版本说明)
-- [安装](#安装-)
-- [使用方法](#使用方法-)
-- [贡献](#贡献-)
-- [许可证](#许可证-)
-- [联系](#联系-)
-- [致谢](#致谢-)
----
-### 背景 🌟
+- 如果你想预览更多内容 📖，可以访问我的 **CSDN 博客**[https://ttbigdata.blog.csdn.net/](https://ttbigdata.blog.csdn.net/)
+  ，这里会定期分享项目相关的简要预览和技术干货。
 
-本项目结合了 Ambari 和 Bigtop 的优势，提供了一站式的编译和部署解决方案，简化了大数据平台的搭建和运维过程。💡
-
----
-### 功能 🎯
-
-- 一键编译大数据集群 🖱️
-- 提供详细的日志和错误报告 📋
-- 未来规划（传统离线/实时数仓、各类主流分布式组件、插件）🔮
-
----
-### 导航
-
-| **快捷导航**             | **链接地址**                                                  | **备注**   |
-|----------------------|-----------------------------------------------------------|----------|
-| **相关文档**             | -                                                         |          |
-| ambari+bigtop自定义组件集成 | https://blog.csdn.net/TTBIGDATA/article/details/142150086 | CSDN地址   |
-| 编译、开发、部署、集成解决方案      | https://t.zsxq.com/0PVcI                                  | 知识星球     |
-| **源代码**              | -                                                         |          |
-| Ambari-env           | https://github.com/TtBigdata/ambari-env                   | Gihub    |
-| Ambari-env           | https://gitee.com/tt-bigdata/ambari-env                   | Gitee    |
-| Ambari-2.8.0魔改版      | https://gitee.com/tt-bigdata/ambari-2.8.0                 | Gitee    |
-| **编译包**              | -                                                         |          |
-| 蓝奏云-1.0.2            | https://www.ilanzou.com/s/4mfyXMq9?code=6655              |          |
-| 阿里云盘-1.0.2           | https://www.alipan.com/s/q3TqL1mdPBp                      | 提取码：01no |
-| **联系方式**             | -                                                         |          |
-| QQ：1群                | https://qm.qq.com/q/3DrsCY5b7a                            |          |
-
+- 如果你需要与其他开发者进行技术交流 💬，解决在项目使用中的问题，欢迎加入我们的**QQ群**，我们会为你提供专业指导，扫清所有障碍！🎯
+  点击链接加入群聊【ambari-env（Ambari+Bigtop）】：https://qm.qq.com/q/COMpqiEVLq
 
 ---
 
-### 互动
-> 对于1.0.3及之后的版本。大家可以邮件我，提出想法，帮助共同推进版本迭代。（如果看到消息，问必答）
-> 
-> 流程：组件收集->技术内部探讨->公式版本演化路线->本页维护时间
+## 最新动态 📢
+
+🎉 **我们的版本已支持 DolphinScheduler 3.2.2** 🎉  
+欢迎大家下载安装并体验！🎯
+![img.png](img_13.png)
+
+🎉 **最新`v1.0.3`编译包请扫描公众号免费获取** 🎉
+
+🚀 **限时优惠**：现在关注我们的微信公众号，还可以限时领取**知识星球优惠券** 🎁，抓紧机会，福利多多，等你来拿！  
+扫码关注，获取更多技术干货与独家优惠👇：
+<div align="center">
+    <img src=".docs/img_5.png" alt="微信公众号" width="300px"/>
+    <br/>
+    <b>请关注我们的微信公众号 📲</b>
+</div>
+
+---
+## 快速导航 📑
+
+| **快捷导航**      | **链接地址**                                  | **备注** |
+|---------------|-------------------------------------------|--------|
+| **源代码**       | -                                         | -      |
+| Ambari-env    | https://github.com/TtBigdata/ambari-env   | Gihub  |
+| Ambari-env    | https://gitee.com/tt-bigdata/ambari-env   | Gitee  |
+| Ambari-Bigtop | https://gitee.com/tt-bigdata/ambari-      | Gitee  |
+| **集成技巧**      | -                                         | -      |
+| Ambari-index  | https://gitee.com/tt-bigdata/ambari-index | Gitee  |
 
 ---
 ### 版本说明
 
-- v1.0.3 支持情况
+- v1.0.4 支持情况
 
 | **组件名称** | **组件版本** | **env版本** | 时间  |
 |----------|----------|-----------|-----|
-| 待定       | 待定       | 1.0.3     | 待定  |
+| Doris    | 待定       | 1.0.4     | 待定  |
+| 其他待定     | 待定       | 1.0.4     | 待定  |
+
+- v1.0.3 支持情况
+
+| **组件名称**         | **组件版本** | **env版本** | 时间         |
+|------------------|----------|-----------|------------|
+| Phoenix          | 5.1.2    | 1.0.3     | 2024/10/15 |
+| Dolphinscheduler | 3.2.2    | 1.0.3     | 2024/10/15 |
 
 - v1.0.2 支持情况
 
@@ -100,40 +95,51 @@ Bigtop，简化大数据平台的搭建过程。🌐
 ![img_11.png](.docs/img_11.png)
 
 ---
-### 安装 🛠️
+## 互动
 
-#### 先决条件 📋
+> 对于1.0.4及之后的版本。大家可以邮件我，提出想法，帮助共同推进版本迭代。（如果看到消息，问必答）
+>
+> 流程：组件收集->技术内部探讨->公式版本演化路线->本页维护时间
 
-在开始安装之前，请确保您的系统满足以下要求：
+---
+## 功能介绍 🎯
+
+- **一键编译**：自动化脚本轻松实现大数据集群编译部署，无需手动操作 🖱️。
+- **组件集成**：支持常见大数据组件的灵活定制和集成，如 Redis、Phoenix、Dolphinscheduler 🧩。
+- **详细日志和报错报告**：帮助用户快速定位和解决问题 📝。
+- **未来扩展规划**：离线/实时数仓、多种分布式组件支持即将上线，敬请期待 🔮。
+
+---
+
+## 安装步骤 🛠️
+
+### 1. 系统要求 📋
+
+确保你的系统满足以下条件：
 
 | **系统要求** | **描述**                     |
 |----------|----------------------------|
-| 操作系统     | Linux（推荐 CentOS7.9）🐧      |
+| 操作系统     | Linux（推荐 CentOS7.9） 🐧     |
 | 内存       | 至少 24GB 💾                 |
 | 硬盘空间     | 至少 300GB 📦                |
-| 网络连接     | 必须 🌐                      |
-| 软件       | Docker 和 Docker Compose 🐳 |
+| 软件要求     | Docker 和 Docker Compose 🐳 |
 
-**技能要求**：掌握 Linux 命令、Gradle、Maven、Java、前端脚手架等。💻
+### 2. 安装指南 🚀
 
-#### 安装步骤 🚀
-
-1. 克隆本仓库：
-
+1. 克隆仓库：
    ```bash
    git clone https://gitee.com/tt-bigdata/ambari-env.git
    cd ambari-env
    ```
 
-2. 运行 Docker Compose 安装脚本：
-
+2. 运行 Docker Compose：
    ```bash
    docker-compose -f docker-compose up -d
    ```
 
-### 使用方法 📈
+---
 
-安装完成后，您可以通过以下命令启动和管理您的大数据集群：
+### 使用方法 📈
 
 ```bash
 # 进入容器镜像内部
@@ -144,6 +150,8 @@ docker exec -it centos1 /bin/bash
 # 方式二
 ssh root@localhost -p 22223
 ```
+
+`"编译"`完成后，您可以通过以下命令启动和管理您的大数据集群：
 #### 一键编译
 
 ```bash
@@ -151,6 +159,7 @@ ssh root@localhost -p 22223
   bash  /scripts/build/onekey_build.sh 
   # 编译结果如下图：
 ```
+
 ![img_12.png](.docs/img_12.png)
 ![img_13.png](.docs/img_13.png)
 
@@ -160,7 +169,9 @@ ssh root@localhost -p 22223
   # tips:1.0.2版本以上支持
   bash  /scripts/install/onekey_start.sh 
 ```
+
 #### 独立编译
+
 - **编译 Ambari:**
 
   ```bash
@@ -193,32 +204,15 @@ ssh root@localhost -p 22223
   ![img_3.png](.docs/img_3.png)
   ![img_4.png](.docs/img_4.png)
 
-### 贡献 🤝
-
-特别感谢 JaneTTR 对本项目的贡献。👏
-
-### 许可证 📜
-
-本项目采用 [Apache 2.0](LICENSE)。
-
-### 联系 📧
-
-- **项目维护者**：JaneTTR
-
-- **邮箱**：3832514048@qq.com
-
-- **微信公众号**
-  <img src=".docs/img_5.png" alt="img_5.png" style="zoom: 33%;" />
-
-### 致谢 🙏
-
-特别感谢以下资源和工具：
-
-- [Ambari](https://ambari.apache.org/)
-- [Bigtop](https://bigtop.apache.org/)
-
 感谢您的关注与支持！🎉 如果您觉得这个项目对您有帮助，欢迎请我喝杯咖啡 ☕，以支持我继续开发和维护这个项目！感激不尽！😊
 
 <img alt="img_6.png" src=".docs/img_6.jpg" style="zoom: 33%;" />
 
 ---
+
+
+### 许可证 📜
+
+本项目采用 [Apache 2.0](LICENSE)。
+
+

@@ -23,8 +23,8 @@ echo "############## ONE_KEY_BUILD start #############"
 echo "1.0.0 版本编译开始"
 bash /scripts/build/bigtop/build.sh
 bash /scripts/build/ambari/build.sh
-#bash /scripts/build/ambari-infra/build.sh
-#bash /scripts/build/ambari-metrics/build.sh
+bash /scripts/build/ambari-infra/build.sh
+bash /scripts/build/ambari-metrics/build.sh
 echo "1.0.0 版本结束"
 
 echo "1.0.1 版本编译开始"

@@ -27,6 +27,7 @@ echo "############## BUILD AMBARI1_0_3 start #############"
 # 定义一个包含所有补丁文件路径的数组
 patch_files=(
   "/scripts/build/ambari/patch1_0_3/patch0-REDIS-CONFIG-OPTIMIZED.diff"
+  "/scripts/build/ambari/patch1_0_3/patch1-DOLPHIN-CLUSTER-ADD.diff"
 )
 PROJECT_PATH="/opt/modules/ambari"
 RPM_PACKAGE="/data/rpm-package/ambari"
@@ -69,7 +70,7 @@ done
 cd "$PROJECT_PATH"
 
 #mvn -T 16 -B clean install package rpm:rpm -Drat.skip=true -Dcheckstyle.skip=true -DskipTests -Dpython.ver="python >= 2.6" -Preplaceurl -X
-#mvn -T 16 -B  install package rpm:rpm -Drat.skip=true -Dcheckstyle.skip=true -DskipTests -Dpython.ver="python >= 2.6" -Preplaceurl
+mvn -T 16 -B  install package rpm:rpm -Drat.skip=true -Dcheckstyle.skip=true -DskipTests -Dpython.ver="python >= 2.6" -Preplaceurl
 
 find "$PROJECT_PATH" -iname '*.rpm' -exec cp -rv {} "$RPM_PACKAGE" \;
 echo "############## BUILD AMBARI1_0_3 end #############"

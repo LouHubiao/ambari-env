@@ -38,7 +38,7 @@ extract_files=(
 # 清理bigtop-select 因为融合了新组件
 #rm -rf "${PROJECT_PATH}/build/phoenix"  "${PROJECT_PATH}/output/phoenix"
 rm -rf "${PROJECT_PATH}/build/bigtop-select"  "${PROJECT_PATH}/output/bigtop-select"
-rm -rf "${PROJECT_PATH}/build/dolphinscheduler"  "${PROJECT_PATH}/output/dolphinscheduler"
+#rm -rf "${PROJECT_PATH}/build/dolphinscheduler"  "${PROJECT_PATH}/output/dolphinscheduler"
 # 定义一个函数来解压 .tar.gz 文件
 extract_file() {
   local source_file=$1

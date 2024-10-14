@@ -67,6 +67,7 @@ done
 patch_files=(
   "/scripts/build/bigtop/patch1_0_3/patch0-BOM-COMPONENT-ADD.diff"
   "/scripts/build/bigtop/patch1_0_3/patch1-BIGTOP-SELECT-ADD.diff"
+  "/scripts/build/bigtop/patch1_0_3/patch2-DOLPHIN-FIXED-DEPENDENCIES.diff"
 )
 RPM_PACKAGE="/data/rpm-package/bigtop"
 
@@ -148,4 +149,3 @@ gradle \
 
 
 echo "############## BUILD BIGTOP_1_0_3 end #############" -d
-

@@ -19,7 +19,7 @@
 
 🎉 **我们的版本已支持 DolphinScheduler 3.2.2** 🎉  
 欢迎大家下载安装并体验！🎯
-![img.png](img_13.png)
+![img.png](.docs/img_13.png)
 
 🎉 **最新`v1.0.3`编译包请扫描公众号免费获取** 🎉
 

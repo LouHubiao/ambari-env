@@ -45,7 +45,7 @@
 | Ambari-index  | https://gitee.com/tt-bigdata/ambari-index | Gitee  |
 
 ---
-### 版本说明
+## 版本说明
 
 - v1.0.4 支持情况
 

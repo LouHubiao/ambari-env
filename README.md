@@ -155,6 +155,16 @@ ssh root@localhost -p 22223
 ```
 
 `"编译"`完成后，您可以通过以下命令启动和管理您的大数据集群：
+
+
+**`注意`： windows下换行符要进行修改，不然会出现 no such file 等问题**
+
+**`注意`： windows下换行符要进行修改，不然会出现 no such file 等问题**
+
+**`注意`： windows下换行符要进行修改，不然会出现 no such file 等问题**
+![img.png](.docs/img_16.png)
+![img_1.png](.docs/img_17.png)
+
 #### 一键编译
 
 ```bash

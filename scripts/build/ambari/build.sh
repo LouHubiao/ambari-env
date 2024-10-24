@@ -64,6 +64,8 @@ done
 cd "$PROJECT_PATH"
 
 tar -zxvf /scripts/build/ambari/patch/source/bower.tar.gz -C "$PROJECT_PATH/ambari-admin/src/main/resources/ui/admin-web/"
+# 使用指定镜像 phantomjs-2.1.1-linux-x86_64.tar.bz2 解决 admin 和 web 下载 github 下不下来问题
+export PHANTOMJS_CDNURL=https://npmmirror.com/mirrors/phantomjs/
 
 #mvn -T 16 -B clean install package rpm:rpm -Drat.skip=true -Dcheckstyle.skip=true -DskipTests -Dpython.ver="python >= 2.6" -Preplaceurl -X
 #mvn -T 16 -B  install package rpm:rpm -Drat.skip=true -Dcheckstyle.skip=true -DskipTests -Dpython.ver="python >= 2.6" -Preplaceurl -X

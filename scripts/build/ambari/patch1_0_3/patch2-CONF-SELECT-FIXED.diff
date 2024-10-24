@@ -1,0 +1,43 @@
+Subject: [PATCH] feature: dolphin conf 修复
+---
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/properties/stack_packages.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/properties/stack_packages.json b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/properties/stack_packages.json
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/properties/stack_packages.json	(revision 5cb088ea456382f58e06a2ce64d306cea5121808)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/properties/stack_packages.json	(date 1729491122308)
+@@ -709,28 +709,28 @@
+       "dolphin-master": [
+         {
+           "conf_dir": "/etc/dolphinscheduler/master-server/conf",
+-          "current_dir": "{0}/current/master-server/conf",
++          "current_dir": "{0}/current/dolphin-master/conf",
+           "component": "dolphin-master"
+         }
+       ],
+       "dolphin-alert": [
+         {
+           "conf_dir": "/etc/dolphinscheduler/alert-server/conf",
+-          "current_dir": "{0}/current/alert-server/conf",
++          "current_dir": "{0}/current/dolphin-alert/conf",
+           "component": "dolphin-alert"
+         }
+       ],
+       "dolphin-api": [
+         {
+           "conf_dir": "/etc/dolphinscheduler/api-server/conf",
+-          "current_dir": "{0}/current/api-server/conf",
++          "current_dir": "{0}/current/dolphin-api/conf",
+           "component": "dolphin-api"
+         }
+       ],
+       "dolphin-worker": [
+         {
+           "conf_dir": "/etc/dolphinscheduler/worker-server/conf",
+-          "current_dir": "{0}/current/worker-server/conf",
++          "current_dir": "{0}/current/dolphin-worker/conf",
+           "component": "dolphin-worker"
+         }
+       ]

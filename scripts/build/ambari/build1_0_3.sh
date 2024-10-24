@@ -28,6 +28,7 @@ echo "############## BUILD AMBARI1_0_3 start #############"
 patch_files=(
   "/scripts/build/ambari/patch1_0_3/patch0-REDIS-CONFIG-OPTIMIZED.diff"
   "/scripts/build/ambari/patch1_0_3/patch1-DOLPHIN-CLUSTER-ADD.diff"
+  "/scripts/build/ambari/patch1_0_3/patch2-CONF-SELECT-FIXED.diff"
 )
 PROJECT_PATH="/opt/modules/ambari"
 RPM_PACKAGE="/data/rpm-package/ambari"

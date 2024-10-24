@@ -22,7 +22,7 @@ echo "############## ONE_KEY_BUILD start #############"
 
 
 bash /scripts/build/ambari/build_ambari_all.sh
-bash /scripts/build/bigtop/build_ambari_all.sh
+bash /scripts/build/bigtop/build_bigtop_all.sh
 
 
 bash /scripts/build/ambari-infra/build.sh

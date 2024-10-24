@@ -16,7 +16,7 @@
 #
 # Author: JaneTTR
 
-set -ex
+set -e
 
 echo "############## BUILD AMBARI1_0_1 start #############"
 
@@ -67,10 +67,4 @@ done
 ####      BUILD       ###
 #########################
 
-cd "$PROJECT_PATH"
-
-#mvn -T 16 -B clean install package rpm:rpm -Drat.skip=true -Dcheckstyle.skip=true -DskipTests -Dpython.ver="python >= 2.6" -Preplaceurl -X
-#mvn -T 16 -B  install package rpm:rpm -Drat.skip=true -Dcheckstyle.skip=true -DskipTests -Dpython.ver="python >= 2.6" -Preplaceurl
-
-#find "$PROJECT_PATH" -iname '*.rpm' -exec cp -rv {} "$RPM_PACKAGE" \;
 echo "############## BUILD AMBARI1_0_1 end #############"

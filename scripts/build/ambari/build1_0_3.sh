@@ -16,7 +16,7 @@
 #
 # Author: JaneTTR
 
-set -ex
+set -e
 
 echo "############## BUILD AMBARI1_0_3 start #############"
 
@@ -29,6 +29,7 @@ patch_files=(
   "/scripts/build/ambari/patch1_0_3/patch0-REDIS-CONFIG-OPTIMIZED.diff"
   "/scripts/build/ambari/patch1_0_3/patch1-DOLPHIN-CLUSTER-ADD.diff"
   "/scripts/build/ambari/patch1_0_3/patch2-CONF-SELECT-FIXED.diff"
+  "/scripts/build/ambari/patch1_0_3/patch3-NPM-MIRROR-FASTER.diff"
 )
 PROJECT_PATH="/opt/modules/ambari"
 RPM_PACKAGE="/data/rpm-package/ambari"
@@ -68,10 +69,6 @@ done
 ####      BUILD       ###
 #########################
 
-cd "$PROJECT_PATH"
 
-#mvn -T 16 -B clean install package rpm:rpm -Drat.skip=true -Dcheckstyle.skip=true -DskipTests -Dpython.ver="python >= 2.6" -Preplaceurl -X
-mvn -T 16 -B  install package rpm:rpm -Drat.skip=true -Dcheckstyle.skip=true -DskipTests -Dpython.ver="python >= 2.6" -Preplaceurl
 
-find "$PROJECT_PATH" -iname '*.rpm' -exec cp -rv {} "$RPM_PACKAGE" \;
 echo "############## BUILD AMBARI1_0_3 end #############"

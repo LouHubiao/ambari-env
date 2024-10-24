@@ -135,17 +135,6 @@ done
 ####      BUILD       ###
 #########################
 
-# 开启 gcc 高版本
-source /opt/rh/devtoolset-7/enable
-
-cd "$PROJECT_PATH"
-gradle \
-  redis-rpm \
-  bigtop-select-rpm \
-  -PparentDir=/usr/bigtop \
-  -Dbuildwithdeps=true \
-  -PpkgSuffix -d
-
 
 
 echo "############## BUILD BIGTOP_1_0_2 end #############" -d

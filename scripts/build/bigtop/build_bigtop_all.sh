@@ -16,16 +16,76 @@
 #
 # Author: JaneTTR
 
-set -ex
+set -e
 
-echo "############## BUILD BIGTOP_RPM_TRANSFORM start #############"
 
+
+echo "############## ONE_KEY_BUILD start #############"
 
 
 PROJECT_PATH="/opt/modules/bigtop"
 RPM_PACKAGE="/data/rpm-package/bigtop"
 mkdir -p "$RPM_PACKAGE"
 
+
+
+echo "1.0.0 版本编译开始"
+bash /scripts/build/bigtop/build.sh
+echo "1.0.0 版本结束"
+
+echo "1.0.1 版本编译开始"
+bash /scripts/build/bigtop/build1_0_1.sh
+echo "1.0.1 版本编译结束"
+
+echo "1.0.2 版本编译开始"
+bash /scripts/build/bigtop/build1_0_2.sh
+echo "1.0.2 版本编译结束"
+
+echo "1.0.3 版本编译开始"
+bash /scripts/build/bigtop/build1_0_3.sh
+echo "1.0.3 版本编译结束"
+
+
+
+
+# 开启 gcc 高版本
+source /opt/rh/devtoolset-7/enable
+
+cd "$PROJECT_PATH"
+
+# 定义所有组件列表，并标注版本历史
+ALL_COMPONENTS=(
+  # 1.0.0 版本
+  bigtop-groovy-rpm
+  bigtop-jsvc-rpm
+  bigtop-select-rpm
+  bigtop-utils-rpm
+  zookeeper-rpm
+  hadoop-rpm
+  flink-rpm
+  hbase-rpm
+  hive-rpm
+  kafka-rpm
+  spark-rpm
+  solr-rpm
+  tez-rpm
+  zeppelin-rpm
+  livy-rpm
+  # 1.0.1 版本新增
+  sqoop-rpm
+  ranger-rpm
+  # 1.0.2 版本新增
+  redis-rpm
+  # 1.0.3 版本新增
+  phoenix-rpm
+  dolphinscheduler-rpm
+)
+
+# 编译所有组件
+gradle "${ALL_COMPONENTS[@]}" \
+  -PparentDir=/usr/bigtop \
+  -Dbuildwithdeps=true \
+  -PpkgSuffix
 
 
 # 遍历 output 目录下的每个子目录
@@ -42,4 +102,5 @@ for dir in "$PROJECT_PATH"/output/*; do
     fi
 done
 
-echo "############## BUILD BIGTOP_RPM_TRANSFORM end #############"
+
+echo "############## ONE_KEY_BUILD end #############"

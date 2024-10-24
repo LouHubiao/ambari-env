@@ -129,21 +129,6 @@ done
 ####      BUILD       ###
 #########################
 
-# 开启 gcc 高版本
-source /opt/rh/devtoolset-7/enable
-
-cd "$PROJECT_PATH"
-gradle \
-  bigtop-groovy-rpm \
-  bigtop-jsvc-rpm \
-  bigtop-select-rpm \
-  bigtop-utils-rpm \
-  sqoop-rpm \
-  ranger-rpm \
-  -PparentDir=/usr/bigtop \
-  -Dbuildwithdeps=true \
-  -PpkgSuffix
-
 
 
 echo "############## BUILD BIGTOP_1_0_1 end #############" -d

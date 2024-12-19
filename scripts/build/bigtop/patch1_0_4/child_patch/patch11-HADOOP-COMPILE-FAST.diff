@@ -1,0 +1,81 @@
+Subject: [PATCH] fixed： 更换本地镜像源头
+---
+Index: hadoop-yarn-project/hadoop-yarn/hadoop-yarn-ui/src/main/webapp/bower.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-ui/src/main/webapp/bower.json b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-ui/src/main/webapp/bower.json
+--- a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-ui/src/main/webapp/bower.json	(revision 2e576d7bdc858308f5a019534bbe77037deb1aa9)
++++ b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-ui/src/main/webapp/bower.json	(date 1734597056761)
+@@ -1,29 +1,29 @@
+ {
+   "name": "yarn-ui",
+   "dependencies": {
+-    "ember": "https://ghp.ci/https://github.com/components/ember.git#2.8.0",
+-    "ember-cli-shims": "https://ghp.ci/https://github.com/ember-cli/ember-cli-shims.git#0.0.6",
+-    "ember-cli-test-loader": "https://ghp.ci/https://github.com/ember-cli/ember-cli-test-loader.git#0.2.1",
+-    "ember-data": "https://ghp.ci/https://github.com/components/ember-data.git#2.1.0",
+-    "ember-load-initializers": "https://ghp.ci/https://github.com/ember-cli/ember-load-initializers.git#0.1.7",
+-    "ember-qunit": "https://ghp.ci/https://github.com/jquery/qunit.git#1.19.0",
+-    "ember-qunit-notifications": "https://ghp.ci/https://github.com/dockyard/ember-qunit-notifications.git#~0.1.0",
+-    "jquery": "https://ghp.ci/https://github.com/jquery/jquery-dist.git#3.6.0",
+-    "loader.js": "https://ghp.ci/https://github.com/stefanpenner/loader.js.git#3.3.0",
+-    "qunit": "https://ghp.ci/https://github.com/jquery/qunit.git#1.19.0",
+-    "jquery-ui": "https://ghp.ci/https://github.com/components/jqueryui.git#1.12.1",
+-    "moment": "https://ghp.ci/https://github.com/moment/moment.git#2.12.0",
+-    "moment-timezone": "https://ghp.ci/https://github.com/moment/moment-timezone.git#0.5.1",
+-    "more-js": "https://ghp.ci/https://github.com/sreenaths/more-js.git#0.8.2",
+-    "bootstrap": "https://ghp.ci/https://github.com/twbs/bootstrap.git#3.4.1",
+-    "d3": "https://ghp.ci/https://github.com/mbostock-bower/d3-bower.git#~3.5.6",
+-    "datatables": "https://ghp.ci/https://github.com/DataTables/DataTables.git#~1.10.8",
+-    "spin.js": "https://ghp.ci/https://github.com/fgnass/spin.js.git#~2.3.2",
+-    "momentjs": "https://ghp.ci/https://github.com/moment/moment.git#~2.10.6",
+-    "select2": "https://ghp.ci/https://github.com/ivaynberg/select2.git#4.0.0",
+-    "snippet-ss": "https://ghp.ci/https://github.com/sreenaths/snippet-ss.git#~1.11.0",
+-    "alasql": "https://ghp.ci/https://github.com/agershun/alasql.git#^0.4.3",
+-    "x2js": "https://ghp.ci/https://github.com/abdmob/x2js.git#1.2.0",
+-    "qunit-notifications": "https://ghp.ci/https://github.com/dockyard/qunit-notifications.git#~0.1.0"
++    "ember": "./bower_components/ember",
++    "ember-cli-shims": "./bower_components/ember-cli-shims",
++    "ember-cli-test-loader": "./bower_components/ember-cli-test-loader",
++    "ember-data": "./bower_components/ember-data",
++    "ember-load-initializers": "./bower_components/ember-load-initializers",
++    "ember-qunit": "./bower_components/ember-qunit",
++    "ember-qunit-notifications": "./bower_components/ember-qunit-notifications",
++    "jquery": "./bower_components/jquery",
++    "loader.js": "./bower_components/loader.js",
++    "qunit": "./bower_components/qunit",
++    "jquery-ui": "./bower_components/jquery-ui",
++    "moment": "./bower_components/moment",
++    "moment-timezone": "./bower_components/moment-timezone",
++    "more-js": "./bower_components/more-js",
++    "bootstrap": "./bower_components/bootstrap",
++    "d3": "./bower_components/d3",
++    "datatables": "./bower_components/datatables",
++    "spin.js": "./bower_components/spin.js",
++    "momentjs": "./bower_components/momentjs",
++    "select2": "./bower_components/select2",
++    "snippet-ss": "./bower_components/snippet-ss",
++    "alasql": "./bower_components/alasql",
++    "x2js": "./bower_components/x2js",
++    "qunit-notifications": "./bower_components/qunit-notifications"
+   }
+ }
+Index: hadoop-yarn-project/hadoop-yarn/hadoop-yarn-ui/pom.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-ui/pom.xml b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-ui/pom.xml
+--- a/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-ui/pom.xml	(revision 2e576d7bdc858308f5a019534bbe77037deb1aa9)
++++ b/hadoop-yarn-project/hadoop-yarn/hadoop-yarn-ui/pom.xml	(date 1734597086615)
+@@ -211,7 +211,7 @@
+                 <phase>generate-resources</phase>
+                 <id>bower install</id>
+                 <configuration>
+-                  <arguments>install --allow-root</arguments>
++                  <arguments>install --allow-root --offline</arguments>
+                 </configuration>
+                 <goals>
+                   <goal>bower</goal>

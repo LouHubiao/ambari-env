@@ -1,0 +1,19 @@
+Subject: [PATCH] feature: 移除hadoop 的 yarn.lock 文件
+---
+Index: bigtop-packages/src/common/hadoop/do-component-build
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/bigtop-packages/src/common/hadoop/do-component-build b/bigtop-packages/src/common/hadoop/do-component-build
+--- a/bigtop-packages/src/common/hadoop/do-component-build	(revision b45ae36fe29f10e4848eda4ae8a26bb91d53f0f9)
++++ b/bigtop-packages/src/common/hadoop/do-component-build	(date 1734598111058)
+@@ -134,6 +134,8 @@
+ # bower_components copy here
+ tar -zxvf ../../SOURCES/yarn-ui-bower.tar.gz -C ./hadoop-yarn-project/hadoop-yarn/hadoop-yarn-ui/src/main/webapp
+
++# rm -rf hadoop-yarn-ui  yarn lock
++rm -rf ./hadoop-yarn-project/hadoop-yarn/hadoop-yarn-ui/src/main/webapp/yarn.lock
+
+ # Build artifacts
+ mvn -X $BUNDLE_SNAPPY -Pdist -Pnative -Psrc -Pyarn-ui -Dtar ${MAVEN_OPTS} install ${EXTRA_GOALS} "$@"

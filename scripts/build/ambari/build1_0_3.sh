@@ -59,7 +59,6 @@ apply_patch() {
   fi
 }
 
-
 # 遍历数组并应用每个补丁文件
 for patch_file in "${patch_files[@]}"; do
   apply_patch "$patch_file"

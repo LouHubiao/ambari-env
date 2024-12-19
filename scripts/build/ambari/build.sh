@@ -28,7 +28,7 @@ echo "############## BUILD AMBARI start #############"
 patch_files=(
   "/scripts/build/ambari/patch/patch0-BOWER-MIRROR.diff"
   #如果不想要汉化，请注释下行代码
-  "/scripts/build/ambari/patch/patch1-CONVERT-CN.diff"
+#  "/scripts/build/ambari/patch/patch1-CONVERT-CN.diff"
   "/scripts/build/ambari/patch/patch2-FIXED-POS-DISPLAY.diff"
   "/scripts/build/ambari/patch/patch3-ADMIN-BOWER-VERBOSE.diff"
 )

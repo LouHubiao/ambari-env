@@ -105,6 +105,7 @@ CHILD_PATH="$PROJECT_PATH/bigtop-packages/src/common"
 
 # 定义一个包含源文件和目标路径的数组
 copy_files=(
+  "/scripts/build/bigtop/patch1_0_4/source/hadoop/yarn-ui-bower.tar.gz:$CHILD_PATH/hadoop"
   "/scripts/build/bigtop/patch1_0_4/child_patch/patch11-HADOOP-COMPILE-FAST.diff:$CHILD_PATH/hadoop"
 )
 

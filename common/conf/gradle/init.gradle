@@ -1,6 +1,6 @@
 allprojects {
     repositories {
-        def REPOSITORY_URL = 'http://localhost:8081/repository/maven-public/'
+        def REPOSITORY_URL = 'http://172.20.0.2:8081/repository/maven-public/'
         // 配置自定义仓库
         maven {
             url REPOSITORY_URL

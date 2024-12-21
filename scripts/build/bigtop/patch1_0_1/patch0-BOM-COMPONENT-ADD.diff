@@ -28,7 +28,7 @@ index f96715d..94dfe5e 100644
 +                source = destination
 +            }
 +            url {
-+                site = "https://ghp.ci/https://github.com/apache/ranger/archive/refs/tags"
++                site = "https://ghgo.xyz/https://github.com/apache/ranger/archive/refs/tags"
 +                archive = site
 +            }
 +            maven_parallel_build = true

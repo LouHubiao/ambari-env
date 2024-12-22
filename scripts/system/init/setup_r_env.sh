@@ -29,7 +29,22 @@ INSTALL_DIR="/usr/local/R-4.4.1"
 # 检查R是否已经安装
 if [ ! -d "$INSTALL_DIR" ]; then
   # 更新系统并安装必要的依赖
-  sudo yum install -y gcc-gfortran readline-devel libXt-devel libX11-devel libpng-devel libjpeg-devel cairo-devel pango-devel bzip2-devel xz-devel curl-devel libicu-devel
+  sudo yum install -y gcc-gfortran \
+  readline-devel \
+  libicu-devel \
+  libXt-devel \
+  libX11-devel \
+  libpng-devel \
+  libjpeg-devel \
+  libtiff-devel \
+  cairo-devel \
+  pango-devel \
+  bzip2-devel \
+  xz-devel \
+  curl-devel \
+  freetype-devel \
+  zlib-devel \
+  pkgconfig
 
   # 下载tar.gz文件，如果文件不存在
   if [ ! -f "$TAR_FILE" ]; then

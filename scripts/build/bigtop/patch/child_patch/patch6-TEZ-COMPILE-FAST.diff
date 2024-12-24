@@ -27,7 +27,7 @@ index 8161be7..b69f5f3 100644
              </goals>
              <configuration>
 -              <arguments>install</arguments>
-+              <arguments>install --verbose</arguments>
++              <arguments>install --verbose --ignore-engines</arguments>
 +              <npmRegistryURL>https://registry.npmmirror.com/</npmRegistryURL>
              </configuration>
            </execution>

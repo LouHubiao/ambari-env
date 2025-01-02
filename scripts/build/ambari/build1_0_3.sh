@@ -18,7 +18,7 @@
 
 set -e
 
-echo "############## BUILD AMBARI1_0_3 start #############"
+echo "############## PRE BUILD AMBARI1_0_3 start #############"
 
 #########################
 ####      PATCH       ###
@@ -70,4 +70,4 @@ done
 
 
 
-echo "############## BUILD AMBARI1_0_3 end #############"
+echo "############## PRE BUILD AMBARI1_0_3 end #############"

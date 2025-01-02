@@ -18,7 +18,7 @@
 
 set -ex
 
-echo "############## BUILD AMBARI-METRICS start #############"
+echo "############## PRE BUILD AMBARI-METRICS start #############"
 
 #########################
 ####      PATCH       ###
@@ -106,4 +106,4 @@ mvn -T 4C clean install -DskipTests -Drat.skip=true -Dbuild-rpm -X
 
 find "$PROJECT_PATH" -iname '*.rpm' -exec cp -rv {} "$RPM_PACKAGE" \;
 
-echo "############## BUILD AMBARI-METRICS end #############"
+echo "############## PRE BUILD AMBARI-METRICS end #############"

@@ -18,7 +18,7 @@
 
 set -ex
 
-echo "############## BUILD BIGTOP_1_0_4 start #############"
+echo "############## PRE BUILD BIGTOP_1_0_4 start #############"
 
 export NEXUS_URL=$(cat /scripts/system/before/nexus/.lock)
 export NEXUS_USERNAME="admin"
@@ -132,4 +132,4 @@ done
 ####      BUILD       ###
 #########################
 
-echo "############## BUILD BIGTOP_1_0_4 end #############" -d
+echo "############## PRE BUILD BIGTOP_1_0_4 end #############" -d

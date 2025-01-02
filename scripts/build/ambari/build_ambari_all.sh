@@ -18,7 +18,7 @@
 
 set -e
 
-echo "############## BUILD_AMBARI_ALL start #############"
+echo "############## PRE BUILD_AMBARI_ALL start #############"
 
 
 PROJECT_PATH="/opt/modules/ambari"
@@ -27,23 +27,20 @@ RPM_PACKAGE="/data/rpm-package/ambari"
 mkdir -p "$RPM_PACKAGE"
 
 
-echo "1.0.0 版本编译开始"
+echo "处理 1.0.0 补丁"
 bash /scripts/build/ambari/build.sh
-echo "1.0.0 版本结束"
 
-echo "1.0.1 版本编译开始"
+echo "处理 1.0.1 补丁"
 bash /scripts/build/ambari/build1_0_1.sh
-echo "1.0.1 版本编译结束"
 
-echo "1.0.2 版本编译开始"
+echo "处理 1.0.2 补丁"
 bash /scripts/build/ambari/build1_0_2.sh
-echo "1.0.2 版本编译结束"
 
-echo "1.0.3 版本编译开始"
+echo "处理 1.0.3 补丁"
 bash /scripts/build/ambari/build1_0_3.sh
-echo "1.0.3 版本编译结束"
 
-
+echo "处理 1.0.4 补丁"
+bash /scripts/build/ambari/build1_0_4.sh
 
 
 
@@ -58,4 +55,4 @@ mvn -T 16 -B  install package rpm:rpm -Drat.skip=true -Dcheckstyle.skip=true -Ds
 find "$PROJECT_PATH" -iname '*.rpm' -exec cp -rv {} "$RPM_PACKAGE" \;
 
 
-echo "############## BUILD_AMBARI_ALL end #############"
+echo "############## PRE BUILD_AMBARI_ALL end #############"

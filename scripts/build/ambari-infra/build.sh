@@ -18,7 +18,7 @@
 
 set -e
 
-echo "############## BUILD AMBARI-INFRA start #############"
+echo "############## PRE BUILD AMBARI-INFRA start #############"
 
 #########################
 ####      PATCH       ###
@@ -60,4 +60,4 @@ done
 cd "$PROJECT_PATH" && make rpm
 
 find "$PROJECT_PATH" -iname '*.rpm' -exec cp -rv {} "$RPM_PACKAGE" \;
-echo "############## BUILD AMBARI-INFRA end #############"
+echo "############## PRE BUILD AMBARI-INFRA end #############"

@@ -1,0 +1,3978 @@
+Subject: [PATCH] feature：支持 doris 2.1.7
+---
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/be.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/be.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/be.py
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/be.py	(date 1735472554000)
+@@ -0,0 +1,92 @@
++#!/usr/bin/env python3
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++import time
++
++import grp
++import pwd
++import os
++
++from resource_management import *
++from doris import doris
++from doris_service import doris_service
++
++class BE(Script):
++    def install(self, env):
++        import params
++        env.set_params(params)
++        # configure the correct package name(metainfo.xml) so that stack-select can find it
++        self.install_packages(env)
++        self.configure(env)
++        Logger.info('install doris be server successfully!') 
++
++    def configure(self, env, isInstall=False):
++        import params
++        import status_params
++        env.set_params(params)
++        env.set_params(status_params)
++        doris(name='doris_be')
++        Logger.info('configure doris be server successfully!')
++
++    def stop(self, env):
++        import params, status_params
++        self.configure(env)
++        env.set_params(params)
++        doris_service('doris', action='be_stop')
++        Logger.info('doris fe server stop successfully!')
++
++    def start(self, env):
++        import params, status_params
++        self.configure(env)
++        env.set_params(params)
++        doris_service('doris', action='be_start')
++        Logger.info('doris fe server start successfully!')
++
++    def get_log_folder(self):
++        import params
++        return params.be_log_dir
++
++    def get_user(self):
++        import params
++        return params.doris_user
++        
++    def status(self, env):
++        import status_params
++        check_process_status(status_params.doris_be_pid_file)
++
++    def get_pid_files(self):
++        import status_params
++        return [status_params.doris_be_pid_file]
++           
++    def decommission(self, env):
++        import params, status_params
++        self.configure(env)
++        env.set_params(params)
++        doris_service('doris', action='be_decommission_fe')
++        Logger.info('doris be decommission finished!')
++
++    def readd(self, env):
++        import params, status_params
++        self.configure(env)
++        env.set_params(params)
++        doris_service('doris', action='be_add_fe')
++        Logger.info('doris be add operateion finished!')
++
++if __name__ == "__main__":
++    BE().execute()
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/fe_observer.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/fe_observer.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/fe_observer.py
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/fe_observer.py	(date 1735472554000)
+@@ -0,0 +1,90 @@
++#!/usr/bin/env python3
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++import time
++
++import grp
++import pwd
++import os
++import socket
++
++from resource_management import *
++from doris import doris
++from doris_service import doris_service
++from setup_ranger_doris import setup_ranger_doris
++
++class FE_OBSERVER(Script):
++    def install(self, env):
++        import params
++        env.set_params(params)
++        # configure the correct package name(metainfo.xml) so that stack-select can find it
++        fe_observer_hostname = socket.gethostname()
++        Logger.info(fe_observer_hostname)
++        print(params.doris_fe_hosts_list)
++        if len(params.doris_fe_hosts_list) > 0 and fe_observer_hostname in params.doris_fe_hosts_list : 
++            Logger.info('FE OBSERVER can not install with FE in the same host !') 
++            raise Exception('FE OBSERVER can not install with FE in the same host !')
++        else :
++          self.install_packages(env)
++          self.configure(env)
++          Logger.info('install doris fe observer server successfully!') 
++
++    def configure(self, env, isInstall=False):
++        import params
++        import status_params
++        env.set_params(params)
++        env.set_params(status_params)
++        doris(name='doris_fe')
++        Logger.info('configure doris fe server successfully!')
++
++    def stop(self, env):
++        import params, status_params
++        self.configure(env)
++        env.set_params(params)
++        doris_service('doris', action='fe_observer_stop')
++        Logger.info('doris fe server stop successfully!')
++
++    def start(self, env):
++        import params, status_params
++
++        fe_observer_hostname = socket.gethostname()
++        Logger.info(fe_observer_hostname)
++        print(params.doris_fe_hosts_list)
++        if len(params.doris_fe_hosts_list) > 0 and fe_observer_hostname in params.doris_fe_hosts_list : 
++            Logger.info('FE OBSERVER can not install with FE in the same host !') 
++            raise Exception('FE OBSERVER can not install with FE in the same host !')
++ 
++        self.configure(env)
++        env.set_params(params)
++        setup_ranger_doris(upgrade_type=None, service_name="doris_fe_observer")
++        doris_service('doris', action='fe_observer_start')
++        Logger.info('doris fe server  observer start successfully!')
++
++
++    def status(self, env):
++        import status_params
++        check_process_status(status_params.doris_fe_pid_file)
++
++    def get_pid_files(self):
++        import status_params
++        return [status_params.doris_fe_pid_file]
++
++
++if __name__ == "__main__":
++    FE_OBSERVER().execute()
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/doris_client.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/doris_client.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/doris_client.py
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/doris_client.py	(date 1735472554000)
+@@ -0,0 +1,64 @@
++#!/usr/bin/env python3
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++
++from resource_management.libraries.script.script import Script
++from resource_management.libraries.functions import stack_select
++from resource_management.libraries.functions.constants import StackFeature
++from resource_management.libraries.functions.stack_features import check_stack_feature
++from resource_management.libraries.functions.security_commons import build_expectations, \
++  cached_kinit_executor, get_params_from_filesystem, validate_security_config_properties, \
++  FILE_TYPE_XML
++from ambari_commons.os_family_impl import OsFamilyImpl
++from ambari_commons import OSConst
++from resource_management.core.exceptions import ClientComponentHasNoStatus
++
++class DorisClient(Script):
++
++  def install(self, env):
++    import params
++    env.set_params(params)
++    self.install_packages(env)
++    self.configure(env)
++
++  def configure(self, env):
++    import params
++    env.set_params(params)
++ 
++
++  def save_configs(self, env):
++    import params
++    env.set_params(params)
++  
++
++  def start(self, env, upgrade_type=None):
++    import params
++    env.set_params(params)
++
++  def stop(self, env, upgrade_type=None):
++    import params
++    env.set_params(params)
++
++  def status(self, env):
++    raise ClientComponentHasNoStatus()
++
++
++
++if __name__ == "__main__":
++  DorisClient().execute()
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/doris_service.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/doris_service.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/doris_service.py
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/doris_service.py	(date 1735472554000)
+@@ -0,0 +1,361 @@
++#!/usr/bin/env python3
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++import time
++import socket             
++from resource_management import *
++import os
++import socket # for gethostname                               
++from ambari_commons.os_family_impl import OsFamilyFuncImpl, OsFamilyImpl
++from resource_management.core import sudo
++
++
++def doris_service(
++        name,
++        action=''):  # 'start' or 'stop' or 'status'
++    # initializing the op command variables
++    import params
++    import status_params
++    
++    hostname = params.hostname
++    doris_environment = {'JAVA_HOME': params.java_home,
++                          'BROKER_LOG_DIR': params.broker_log_dir
++                        }
++# "cd {doris_home} ;nohup ./doris --daemon start scm  > {doris_log_dir}/doris.log 2>&1 & echo $! > {doris_pid_file}")
++
++    if params.security_enabled:
++        Execute(params.doris_user_kinit_cmd, user=params.doris_user)
++        
++    if action == 'fe_start':
++        if not os.path.exists(params.fe_meta_dir):
++            Execute("mkdir -p {0}".format(params.fe_meta_dir), user=params.doris_user)
++            Execute("chown -R {0}:{1} {2}".format(params.doris_user,params.doris_group,params.fe_meta_dir), user=params.doris_user)
++
++        if os.path.exists(status_params.doris_fe_pid_file):
++          Execute('rm -rf {0}'.format(status_params.doris_fe_pid_file), user=params.doris_user)
++
++        if os.path.exists('{0}/fe.pid'.format(params.doris_fe_bin_path)):  
++          Execute('rm -rf {0}/fe.pid'.format(params.doris_fe_bin_path), user=params.doris_user)
++
++        #judy flag file
++        doris_fe_flag = '{0}/fe.flag'.format(params.doris_fe_bin_path)
++        if not os.path.exists(doris_fe_flag):
++          #default first as fe master
++          if params.doris_fe_host and params.doris_fe_host == params.hostname.lower() :
++            Logger.info('{0} is default master'.format(params.hostname))
++            Execute('{0}/start_fe.sh --daemon'.format(params.doris_fe_bin_path),
++                user=params.doris_user, environment = doris_environment )
++            time.sleep(10)
++          else :
++            leader_fe_host = params.get_leader_fe_host()
++            Execute('{0}/start_fe.sh --helper {1}:{2} --daemon'.format(params.doris_fe_bin_path,leader_fe_host, params.fe_edit_log_port),
++                user=params.doris_user, environment = doris_environment )
++            
++            try :
++              hostname = params.hostname
++              hostip = socket.gethostbyname(hostname)
++              Execute('echo "ALTER SYSTEM ADD FOLLOWER \'{0}:{1}\'; " > /tmp/doris_add_fe_follower.sql &&  {2}/doris -h {3} -P {4}  -u root {5} < /tmp/doris_add_fe_follower.sql '
++                .format(hostip, params.fe_edit_log_port,params.doris_client_bin_path, leader_fe_host, params.fe_query_port, params.fe_root_password_sql ),
++                user=params.doris_user)     
++
++              Logger.info('doris fe {0} add to cluster {1}.'.format(hostname,params.doris_fe_host))
++
++            except Exception as exception:
++             Logger.exception("There was an exception when  ALTER SYSTEM ADD FOLLOWER: " + str(exception))
++          
++          #create flag
++          File(os.path.join(params.doris_fe_bin_path, 'fe.flag'),
++              owner=params.doris_user,
++              group=params.doris_group,
++              content=hostname,
++              mode=0o644,
++            )
++        else :  
++          Execute('{0}/start_fe.sh --daemon'.format(params.doris_fe_bin_path),
++                user=params.doris_user, environment = doris_environment )
++          time.sleep(10)
++        
++        #generate pid,multiple judyment
++        tryTimes = 5
++        while ( tryTimes>0 ):          
++          Execute("ps -ef | grep org.apache.doris.DorisFE| grep -v grep | awk '{{print $2}}' > {0}".format(
++              status_params.doris_fe_pid_file),
++               user=params.doris_user)
++          if(sudo.read_file(status_params.doris_fe_pid_file) == ''):  
++              Execute("ps -ef | grep org.apache.doris.DorisFE | grep -v grep | awk '{{print $2}}' > {0}".format(
++              status_params.doris_fe_pid_file),
++               user=params.doris_user)
++          if(sudo.read_file(status_params.doris_fe_pid_file) != ''):  
++            break
++          else :
++            Logger.info('waiting for fe start...')
++            time.sleep(60)
++            tryTimes = tryTimes-1
++        if (tryTimes == 0 ):
++           Logger.error('start error,pls check logs.')
++        time.sleep(1)
++        
++        Logger.info('doris fe start.')
++
++    elif action == 'fe_stop':
++        #if os.path.exists(status_params.doris_fe_pid_file) and sudo.read_file(status_params.doris_fe_pid_file) != '' :
++        #  Execute("cat {0} > {1}/fe.pid".format(
++        #    status_params.doris_fe_pid_file,params.doris_fe_bin_path),
++        #    user=params.doris_user)
++          
++        pidfile = "{0}/fe.pid".format(params.doris_fe_bin_path)
++        if os.path.exists(pidfile)  and params.check_process_exists(pidfile) :  
++          Execute('{0}/stop_fe.sh'.format(params.doris_fe_bin_path),
++                user=params.doris_user, environment = doris_environment )
++          
++        Execute("rm -rf {0}".format(status_params.doris_fe_pid_file),
++                user=params.doris_user)
++        Logger.info('doris fe stop.')
++
++    elif action == 'fe_observer_start':
++        if not os.path.exists(params.fe_meta_dir):
++            Execute("mkdir -p {0}".format(params.fe_meta_dir), user=params.doris_user)
++            Execute("chown -R {0}:{1} {2}".format(params.doris_user,params.doris_group,params.fe_meta_dir), user=params.doris_user)
++
++        if os.path.exists(status_params.doris_fe_pid_file):
++          Execute('rm -rf {0}'.format(status_params.doris_fe_pid_file), user=params.doris_user)
++          
++        if os.path.exists('{0}/fe.pid'.format(params.doris_fe_bin_path)):  
++          Execute('rm -rf {0}/fe.pid'.format(params.doris_fe_bin_path), user=params.doris_user)
++
++        #judy flag file
++        doris_fe_flag = '{0}/fe.flag'.format(params.doris_fe_bin_path)
++        leader_fe_host = params.get_leader_fe_host()        
++        if leader_fe_host != '' and not os.path.exists(doris_fe_flag):
++          Execute('{0}/start_fe.sh --helper {1}:{2} --daemon'.format(params.doris_fe_bin_path,leader_fe_host, params.fe_edit_log_port),
++                user=params.doris_user, environment = doris_environment )
++          try :
++            hostname = params.hostname
++            hostip = socket.gethostbyname(hostname)
++            #ALTER SYSTEM ADD FOLLOWER "follower_host:edit_log_port";
++            Execute('echo "ALTER SYSTEM ADD OBSERVER  \'{0}:{1}\'; " > /tmp/doris_add_fe_observer.sql &&  {2}/doris -h {3} -P {4}  -u root {5} < /tmp/doris_add_fe_observer.sql '
++                .format(hostip, params.fe_edit_log_port, params.doris_client_bin_path, leader_fe_host, params.fe_query_port, params.fe_root_password_sql ),
++                user=params.doris_user) 
++            Logger.info('doris fe {0} add to cluster {1}.'.format(hostname,params.doris_fe_host))
++          except Exception as exception:
++             Logger.exception("There was an exception when  ALTER SYSTEM ADD OBSERVER: " + str(exception))
++          
++          #create flag
++          File(os.path.join(params.doris_fe_bin_path, 'fe.flag'),
++              owner=params.doris_user,
++              group=params.doris_group,
++              content=hostname,
++              mode=0o644,
++            )
++        else:
++          Execute('{0}/start_fe.sh --daemon'.format(params.doris_fe_bin_path),user=params.doris_user, environment = doris_environment )
++          time.sleep(10)
++        
++        #generate pid
++        tryTimes = 5
++        while ( tryTimes > 0 ):
++          Execute("ps -ef | grep org.apache.doris.DorisFE| grep -v grep | awk '{{print $2}}' > {0}".format(
++              status_params.doris_fe_pid_file),
++              user=params.doris_user)
++          if(sudo.read_file(status_params.doris_fe_pid_file) == ''):  
++              Execute("ps -ef | grep org.apache.doris.DorisFE | grep -v grep | awk '{{print $2}}' > {0}".format(
++              status_params.doris_fe_pid_file),
++               user=params.doris_user)
++          if(sudo.read_file(status_params.doris_fe_pid_file) != ''):
++            break
++          else :
++            Logger.info('waiting for fe observer start...')
++            time.sleep(60)
++            tryTimes = tryTimes-1
++        if (tryTimes == 0 ):
++           Logger.error('start error,pls check logs.')
++        time.sleep(1)
++        
++        Logger.info('doris fe observer start.')
++
++    elif action == 'fe_observer_stop':
++        #if os.path.exists(status_params.doris_fe_pid_file) and sudo.read_file(status_params.doris_fe_pid_file) != '' :
++        # Execute("cat {0} > {1}/fe.pid".format(
++        #   status_params.doris_fe_pid_file,params.doris_fe_bin_path),
++        #   user=params.doris_user)
++          
++        pidfile = "{0}/fe.pid".format(params.doris_fe_bin_path)
++        if os.path.exists(pidfile)  and params.check_process_exists(pidfile)  :       
++          Execute('{0}/stop_fe.sh'.format(params.doris_fe_bin_path),
++                user=params.doris_user, environment = doris_environment )
++        Execute("rm -rf {0}".format(status_params.doris_fe_pid_file),
++                user=params.doris_user)
++        Logger.info('doris fe observer stop.')
++
++    elif action == 'be_start':
++
++        # start be   
++        # data dir              
++        dirs = []
++        for i in params.storage_root_path.split(';'):
++            dirs.append(i.split(',')[0].strip())
++        dirs = [i for i in dirs if i != '']
++        for dir in dirs:
++            if not os.path.exists(dir):
++              Execute(format("{{sudo}} mkdir -p {0}".format(dir))) 
++              Execute(format("{{sudo}} chown -R {0}:{1} {2}".format(params.doris_user,params.doris_group,dir)))
++        
++        #spill dir
++        be_spill_dir = params.spill_storage_root_path
++        if not os.path.exists(be_spill_dir):
++              Execute(format("{{sudo}} mkdir -p {0}".format(be_spill_dir))) 
++              Execute(format("{{sudo}} chown -R {0}:{1} {2}".format(params.doris_user, params.doris_group, be_spill_dir)))        
++
++        Execute('rm -rf {0}'.format(status_params.doris_be_pid_file), user=params.doris_user)
++        Execute('rm -rf {0}/be.pid'.format(params.doris_be_bin_path),
++                user=params.doris_user)
++        # Start Doris BE Server
++        Execute('{0}/start_be.sh --daemon'.format(params.doris_be_bin_path),
++                user=params.doris_user)
++        time.sleep(10)
++
++        tryTimes = 5
++        while ( tryTimes>0 ):
++          Execute("ps -ef | grep doris-be/lib/doris_be | grep -v grep | awk '{{print $2}}' > {0}".format(status_params.doris_be_pid_file),
++              user=params.doris_user)
++          if(sudo.read_file(status_params.doris_be_pid_file) != ''):
++            break
++          else :
++            Logger.info('waiting for be start...')
++            time.sleep(60)
++            tryTimes = tryTimes-1
++        if (tryTimes == 0 ):
++           Logger.error('start error,pls check logs.')
++
++        time.sleep(1)
++        
++        #add be to fe
++        doris_service('doris', action='be_add_fe')    
++
++        Logger.info('doris be start.')
++        
++    elif action == 'be_stop':
++        # Stop Doris BE Server
++        #if os.path.exists(status_params.doris_be_pid_file) and sudo.read_file(status_params.doris_be_pid_file) != '':
++        #  Execute("cat {0} > {1}/be.pid".format(
++        #    status_params.doris_be_pid_file,params.doris_be_bin_path),
++        #    user=params.doris_user)
++
++        pidfile = "{0}/be.pid".format(params.doris_be_bin_path)
++        if os.path.exists(pidfile)  and params.check_process_exists(pidfile) :
++          Execute('{0}/stop_be.sh'.format(params.doris_be_bin_path),
++                user=params.doris_user)
++          
++        Execute("rm -rf {0}".format(status_params.doris_be_pid_file),
++                user=params.doris_user)
++        
++        Logger.info('doris be stop.')
++
++    elif action == 'be_add_fe':
++        # add be to fe
++        leader_fe_host = params.get_leader_fe_host()
++        Logger.info(' leader_fe_host : {0}'.format(leader_fe_host))
++        if leader_fe_host != '' :
++          try :
++            Execute('echo "ALTER SYSTEM ADD BACKEND \'{0}:{1}\'; " > /tmp/doris_add_be.sql &&  {2}/doris -h {3} -P {4}  -u root {5} < /tmp/doris_add_be.sql '
++                .format(params.hostname, params.be_heartbeat_service_port, params.doris_client_bin_path, leader_fe_host, params.fe_query_port, params.fe_root_password_sql),
++                user=params.doris_user)
++        
++            Logger.info('doris be {0} add to fe {1}.'.format(params.hostname,params.doris_fe_host))
++          except Exception as exception:
++             Logger.exception("There was an exception when  ALTER SYSTEM ADD BACKEND: " + str(exception))
++        else: 
++          Logger.error('doris fe not exists !')
++          raise Exception("doris fe not exists !")
++
++
++    elif action == 'be_decommission_fe':
++        # delete be from fe  DECOMMISSION
++        leader_fe_host = params.get_leader_fe_host()
++        Logger.info(' leader_fe_host : {0}'.format(leader_fe_host))
++        if leader_fe_host :
++          Execute('echo "ALTER SYSTEM DECOMMISSION BACKEND \'{0}:{1}\'; " > /tmp/doris_drop_be.sql &&  {2}/doris -h {3} -P {4}  -u root {5} < /tmp/doris_drop_be.sql '
++                .format(params.hostname, params.be_heartbeat_service_port, params.doris_client_bin_path, leader_fe_host, params.fe_query_port, params.fe_root_password_sql),
++                user=params.doris_user)
++        
++          Logger.info('doris be {0} delete from fe {1}.'.format(params.hostname,params.doris_fe_host))
++        else: 
++          Logger.error('doris fe not exists !')
++          raise Exception("doris fe not exists !")
++        
++
++
++    elif action == 'broker_start':
++        Execute('rm -rf {0}'.format(status_params.doris_broker_pid_file), user=params.doris_user)
++        Execute('rm -rf {0}/apache_hdfs_broker.pid'.format(params.doris_broker_bin_path),
++                user=params.doris_user)
++        
++        leader_fe_host = params.get_leader_fe_host()
++        Logger.info(' leader_fe_host : {0}'.format(leader_fe_host))
++        if leader_fe_host != '' :
++          Execute('{0}/start_broker.sh --daemon'.format(params.doris_broker_bin_path),
++                user=params.doris_user, environment = doris_environment )
++          time.sleep(10)
++          try :
++            #ALTER SYSTEM ADD FOLLOWER "follower_host:edit_log_port";
++            Execute('echo "ALTER SYSTEM ADD BROKER broker_name  \'{0}:{1}\'; " > /tmp/doris_add_broker.sql &&  {2}/doris -h {3} -P {4}  -u root {5} < /tmp/doris_add_broker.sql '
++                .format(params.hostname, params.broker_ipc_port, params.doris_client_bin_path, leader_fe_host, params.fe_query_port, params.fe_root_password_sql ),
++                user=params.doris_user) 
++            Logger.info('doris hdfs broker {0} add to fe {1}.'.format(params.hostname,params.doris_fe_host))
++          except Exception as exception:
++             Logger.exception("There was an exception when  ALTER SYSTEM ADD BROKER: " + str(exception))
++        
++        tryTimes = 5
++        while ( tryTimes >  0 ):
++          Execute(
++              "ps -ef | grep org.apache.doris.broker.hdfs.BrokerBootstrap | grep -v grep | awk '{{print $2}}' > {0}".format(
++                status_params.doris_broker_pid_file),
++              user=params.doris_user)
++          if(sudo.read_file(status_params.doris_broker_pid_file) != ''):
++            break
++          else :
++            Logger.info('waiting for apache_hdfs_broker start...')
++            time.sleep(60)
++            tryTimes = tryTimes-1
++        if (tryTimes == 0 ):
++           Logger.error('start error,pls check logs.')
++        time.sleep(1)
++        
++        Logger.info('doris broker start.')
++        
++    elif action == 'broker_stop':
++        if os.path.exists(status_params.doris_broker_pid_file)  and sudo.read_file(status_params.doris_broker_pid_file) != '':
++          Execute("cat {0} > {1}/apache_hdfs_broker.pid".format(
++            status_params.doris_broker_pid_file, params.doris_broker_bin_path),
++            user=params.doris_user)
++        #apache_hdfs_broker.pid
++        pidfile = "{0}/apache_hdfs_broker.pid".format(params.doris_broker_bin_path)
++        if os.path.exists(pidfile)  and params.check_process_exists(pidfile) :
++          Execute('{0}/stop_broker.sh'.format(params.doris_broker_bin_path),
++                user=params.doris_user, environment = doris_environment )
++          
++        Execute('rm -rf {0}'.format(status_params.doris_broker_pid_file),
++                user=params.doris_user)
++        
++        Logger.info('doris broker stop.')
++                
++    else:
++        Logger.info( format("unknown command type: :{action}"))
++
++
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/status_params.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/status_params.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/status_params.py
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/status_params.py	(date 1735472554000)
+@@ -0,0 +1,32 @@
++#!/usr/bin/env python3
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++    http://www.apache.org/licenses/LICENSE-2.0
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++"""
++
++import params
++from resource_management.libraries.script import Script
++
++
++ 
++
++config = Script.get_config()
++# pid dir
++doris_pid_dir = "/var/run/doris"
++
++# pid files
++doris_fe_pid_file = doris_pid_dir + "/fe.pid"
++doris_be_pid_file = doris_pid_dir + "/be.pid"
++doris_broker_pid_file = doris_pid_dir + "/broker.pid"
++
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/fe.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/fe.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/fe.py
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/fe.py	(date 1735472554000)
+@@ -0,0 +1,88 @@
++#!/usr/bin/env python3
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++import time
++
++import grp
++import pwd
++import os
++import socket
++
++from resource_management import *
++from doris import doris
++from doris_service import doris_service
++from setup_ranger_doris import setup_ranger_doris
++
++class FE(Script):
++    def install(self, env):
++        import params
++        env.set_params(params)
++        # configure the correct package name(metainfo.xml) so that stack-select can find it
++        fe_hostname = params.hostname
++        Logger.info(fe_hostname)
++        print(params.doris_fe_observer_hosts_list)
++        if len(params.doris_fe_observer_hosts_list) > 0 and fe_hostname in params.doris_fe_observer_hosts_list : 
++            Logger.info('FE  can not install with FE  OBSERVERin the same host !') 
++            raise Exception('FE can not install with FE  OBSERVER in the same host !')
++        else :
++          self.install_packages(env)
++          self.configure(env)
++          Logger.info('install doris fe server successfully!') 
++
++    def configure(self, env, isInstall=False):
++        import params
++        import status_params
++        env.set_params(params)
++        env.set_params(status_params)
++        doris(name='doris_fe')
++        Logger.info('configure doris fe server successfully!')
++
++    def stop(self, env):
++        import params, status_params
++        self.configure(env)
++        env.set_params(params)       
++        doris_service('doris', action='fe_stop')
++        Logger.info('doris fe server stop successfully!')
++
++    def start(self, env):
++        import params, status_params
++        self.configure(env)
++        env.set_params(params)
++        setup_ranger_doris(upgrade_type=None, service_name="doris_fe")
++        doris_service('doris', action='fe_start')
++        Logger.info('doris fe server start successfully!')
++
++    def status(self, env):
++        import status_params
++        check_process_status(status_params.doris_fe_pid_file)
++
++    def get_log_folder(self):
++        import params
++        return params.fe_log_dir
++
++    def get_user(self):
++        import params
++        return params.doris_user
++
++    def get_pid_files(self):
++        import status_params
++        return [status_params.doris_fe_pid_file]
++
++if __name__ == "__main__":
++    FE().execute()
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/doris.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/doris.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/doris.py
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/doris.py	(date 1735472554000)
+@@ -0,0 +1,255 @@
++#!/usr/bin/env python3
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++import os
++from ambari_commons.os_family_impl import OsFamilyFuncImpl, OsFamilyImpl
++from resource_management import *
++
++
++@OsFamilyFuncImpl(os_family=OsFamilyImpl.DEFAULT)
++def doris(name=None):
++    import params
++    import status_params
++
++    #for test
++    Directory("/app/doris",
++              owner=params.doris_user,
++              create_parents=True,
++              group=params.user_group,
++              mode=0o775
++              )
++    Directory(status_params.doris_pid_dir,
++              owner=params.doris_user,
++              create_parents=True,
++              group=params.user_group,
++              mode=0o775
++              )
++       
++    # gennerate doris be conf releate file
++    if name == "doris_fe":
++      Directory(params.fe_meta_dir,
++              owner=params.doris_user,
++              create_parents=True,
++              group=params.user_group,
++              mode=0o775
++              )
++      Directory(params.fe_log_default_dir,
++              owner=params.doris_user,
++              create_parents=True,
++              group=params.user_group,
++              mode=0o755
++              )
++      Directory(params.fe_log_dir,
++              owner=params.doris_user,
++              create_parents=True,
++              group=params.user_group,
++              mode=0o755
++              )
++      Link(os.path.join(params.doris_fe_home,"log"), action="delete" )
++      Link(os.path.join(params.doris_fe_home,"log"), to=params.fe_log_dir )     
++             
++      Directory(params.fe_temp_dir,
++              owner=params.doris_user,
++              create_parents=True,
++              group=params.user_group,
++              mode=0o755
++              )
++      File(os.path.join(params.doris_fe_conf_dir, 'log4j2-spring.xml'),
++             content='',
++             owner=params.doris_user,
++             group=params.user_group
++             )
++    
++      File(os.path.join(params.doris_fe_conf_dir, 'fe.conf'),
++             content=InlineTemplate(params.config['configurations']['doris-fe-conf']['content']),
++             owner=params.doris_user,
++             group=params.doris_group
++             )
++      #create doris fe ldap.conf
++      File(os.path.join(params.doris_fe_conf_dir, 'ldap.conf'),
++             owner=params.doris_user,
++             group=params.user_group,
++             content=InlineTemplate(params.config['configurations']['doris-fe-ldap-conf']['content']),
++             mode=0o644,
++        )
++      
++      if 'hdfs-site' in params.config['configurations']:
++          XmlConfig("hdfs-site.xml",
++                conf_dir=params.doris_fe_conf_dir,
++                configurations=params.config['configurations']['hdfs-site'],
++                configuration_attributes=params.config['configurationAttributes']['hdfs-site'],
++                owner=params.doris_user,
++                group=params.user_group,
++                mode=0o644
++                )
++      if 'core-site' in params.config['configurations']:
++          XmlConfig("core-site.xml",
++                conf_dir=params.doris_fe_conf_dir,
++                configurations=params.config['configurations']['core-site'],
++                configuration_attributes=params.config['configurationAttributes']['core-site'],
++                owner=params.doris_user,
++                group=params.user_group,
++                mode=0o644
++                )
++      if 'hive-site' in params.config['configurations']:
++          XmlConfig("hive-site.xml",
++                conf_dir=params.doris_fe_conf_dir,
++                configurations=params.config['configurations']['hive-site'],
++                configuration_attributes=params.config['configurationAttributes']['hive-site'],
++                owner=params.doris_user,
++                group=params.user_group,
++                mode=0o644
++                )
++          
++    # gennerate doris be conf releate file
++    if name == "doris_be":  
++      Directory(params.PPROF_TMPDIR,
++              owner=params.doris_user,
++              create_parents=True,
++              group=params.user_group,
++              mode=0o755
++              )       
++      Directory(params.be_log_default_dir,
++              owner=params.doris_user,
++              create_parents=True,
++              group=params.user_group,
++              mode=0o755
++              )
++      Directory(params.be_log_dir,
++              owner=params.doris_user,
++              create_parents=True,
++              group=params.user_group,
++              mode=0o755
++              ) 
++      Link(os.path.join(params.doris_be_home,"log"), action="delete" )
++      Link(os.path.join(params.doris_be_home,"log"), to=params.be_log_dir )    
++      
++      File(os.path.join(params.doris_be_conf_dir, 'be.conf'),
++             content=InlineTemplate(params.config['configurations']['doris-be-conf']['content']),
++             owner=params.doris_user,
++             group=params.doris_group
++             )
++      #create doris be asan_suppr.conf
++      File(os.path.join(params.doris_be_conf_dir, 'asan_suppr.conf'),
++             owner=params.doris_user,
++             group=params.user_group,
++             content=InlineTemplate(params.config['configurations']['doris-be-asan_suppr-conf']['content']),
++             mode=0o644,
++        )    
++      #create doris be Isan_suppr.conf
++      File(os.path.join(params.doris_be_conf_dir, 'lsan_suppr.conf'),
++             owner=params.doris_user,
++             group=params.user_group,
++             content=InlineTemplate(params.config['configurations']['doris-be-lsan_suppr-conf']['content']),
++             mode=0o644,
++        )
++      #create doris be odbcinst.ini
++      File(os.path.join(params.doris_be_conf_dir, 'odbcinst.ini'),
++             owner=params.doris_user,
++             group=params.user_group,
++             content=InlineTemplate(params.config['configurations']['doris-be-odbcinst-ini']['content']),
++             mode=0o644,
++        )
++      
++      if 'hdfs-site' in params.config['configurations']:
++          XmlConfig("hdfs-site.xml",
++                conf_dir=params.doris_be_conf_dir,
++                configurations=params.config['configurations']['hdfs-site'],
++                configuration_attributes=params.config['configurationAttributes']['hdfs-site'],
++                owner=params.doris_user,
++                group=params.user_group,
++                mode=0o644
++                )
++      if 'core-site' in params.config['configurations']:
++          XmlConfig("core-site.xml",
++                conf_dir=params.doris_be_conf_dir,
++                configurations=params.config['configurations']['core-site'],
++                configuration_attributes=params.config['configurationAttributes']['core-site'],
++                owner=params.doris_user,
++                group=params.user_group,
++                mode=0o644
++                )
++      if 'hive-site' in params.config['configurations']:
++          XmlConfig("hive-site.xml",
++                conf_dir=params.doris_be_conf_dir,
++                configurations=params.config['configurations']['hive-site'],
++                configuration_attributes=params.config['configurationAttributes']['hive-site'],
++                owner=params.doris_user,
++                group=params.user_group,
++                mode=0o644
++                )
++
++    # gennerate doris_broker conf releate file      
++    if name == "doris_broker":  
++      Directory(params.hdfs_broker_log_default_dir,
++              owner=params.doris_user,
++              create_parents=True,
++              group=params.user_group,
++              mode=0o755
++              )
++      Directory(params.broker_log_dir,
++              owner=params.doris_user,
++              create_parents=True,
++              group=params.user_group,
++              mode=0o755
++              )
++      Link(os.path.join(params.doris_broker_home,"log"), action="delete" )
++      Link(os.path.join(params.doris_broker_home,"log"), to=params.broker_log_dir )
++      
++      File(os.path.join(params.doris_broker_conf_dir, 'apache_hdfs_broker.conf'),
++             content=InlineTemplate(params.config['configurations']['doris-hdfs-broker-conf']['content']),
++             owner=params.doris_user,
++             group=params.doris_group
++             )
++      #create doris broker log4j.properties
++      File(os.path.join(params.doris_broker_conf_dir, 'log4j.properties'),
++             owner=params.doris_user,
++             group=params.user_group,
++             content=InlineTemplate(params.config['configurations']['doris-hdfs-broker-log4j-properties']['content']),
++             mode=0o644,
++        )
++      if 'hdfs-site' in params.config['configurations']:
++          XmlConfig("hdfs-site.xml",
++                conf_dir=params.doris_broker_conf_dir,
++                configurations=params.config['configurations']['hdfs-site'],
++                configuration_attributes=params.config['configurationAttributes']['hdfs-site'],
++                owner=params.doris_user,
++                group=params.user_group,
++                mode=0o644
++                )
++
++      if 'core-site' in params.config['configurations']:
++          XmlConfig("core-site.xml",
++                conf_dir=params.doris_broker_conf_dir,
++                configurations=params.config['configurations']['core-site'],
++                configuration_attributes=params.config['configurationAttributes']['core-site'],
++                owner=params.doris_user,
++                group=params.user_group,
++                mode=0o644
++                )
++
++      if 'hive-site' in params.config['configurations']:
++          XmlConfig("hive-site.xml",
++                conf_dir=params.doris_broker_conf_dir,
++                configurations=params.config['configurations']['hive-site'],
++                configuration_attributes=params.config['configurationAttributes']['hive-site'],
++                owner=params.doris_user,
++                group=params.user_group,
++                mode=0o644
++                )
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/broker.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/broker.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/broker.py
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/broker.py	(date 1735472554000)
+@@ -0,0 +1,74 @@
++#!/usr/bin/env python3
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++import time
++
++import grp
++import pwd
++import os
++
++from resource_management import *
++from doris import doris
++from doris_service import doris_service
++
++class Broker(Script):
++    def install(self, env):
++        import params
++        env.set_params(params)
++        # configure the correct package name(metainfo.xml) so that stack-select can find it
++        self.install_packages(env)
++        self.configure(env)
++        Logger.info('install doris be server successfully!') 
++
++    def configure(self, env, isInstall=False):
++        import params
++        import status_params
++        env.set_params(params)
++        env.set_params(status_params)
++        doris(name='doris_broker')
++        Logger.info('configure doris fe server successfully!')
++
++    def start(self, env):
++        import params, status_params
++        self.configure(env)
++        env.set_params(params)
++        doris_service('doris', action='broker_start')
++        Logger.info('start doris broker server start successfully!')
++
++    def stop(self, env):
++        import params, status_params
++        self.configure(env)
++        env.set_params(params)
++        doris_service('doris', action='broker_stop')
++        Logger.info('start doris broker server stop successfully!')
++
++    def status(self, env):
++        import status_params
++        check_process_status(status_params.doris_broker_pid_file)
++
++    def get_user(self):
++        import params
++        return params.doris_user
++        
++    def get_pid_files(self):
++        import status_params
++        return [status_params.doris_broker_pid_file]
++
++if __name__ == "__main__":
++    Broker().execute()
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/params.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/params.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/params.py
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/params.py	(date 1735472554000)
+@@ -0,0 +1,400 @@
++#!/usr/bin/env python3
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++    http://www.apache.org/licenses/LICENSE-2.0
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++"""
++from random import lognormvariate
++from resource_management import *
++from resource_management.libraries.script.script import Script
++from resource_management.libraries.functions.default import default
++from resource_management.libraries.functions.expect import expect
++from resource_management.libraries.functions.get_architecture import get_architecture
++from resource_management.libraries.functions.stack_features import check_stack_feature, get_stack_feature_version
++import os
++import status_params
++import subprocess
++from resource_management.libraries.functions.setup_ranger_plugin_xml import generate_ranger_service_config
++from resource_management.libraries.functions.setup_ranger_plugin_xml import get_audit_configs
++import time
++import re
++from ambari_commons.constants import AMBARI_SUDO_BINARY
++from resource_management.libraries.functions import get_kinit_path
++from resource_management.libraries.resources.hdfs_resource import HdfsResource 
++from resource_management.libraries.functions import conf_select, stack_select
++from resource_management.libraries.functions.get_not_managed_resources import get_not_managed_resources
++
++
++sudo = AMBARI_SUDO_BINARY
++
++retryAble = default("/commandParams/command_retry_enabled", False)
++
++# New Cluster Stack Version that is defined during the RESTART of a Stack Upgrade
++version = default("/commandParams/version", None)
++
++service_packagedir = os.path.realpath(__file__).split('/scripts')[0]
++config = Script.get_config()
++tmp_dir = Script.get_tmp_dir()
++
++architecture = get_architecture()
++
++# Env
++hostname = config['agentLevelParams']['hostname']
++
++java_home = config['ambariLevelParams']['java_home']
++java_version = expect("/ambariLevelParams/java_version", int)
++java_exec = format("{java_home}/bin/java")
++
++# Stack info
++stack_version_unformatted = str(config['clusterLevelParams']['stack_version'])
++stack_version_formatted = format_stack_version(stack_version_unformatted)
++stack_root = Script.get_stack_root()
++stack_name = default("/hostLevelParams/stack_name", None)
++user_group = config['configurations']['cluster-env']['user_group']
++doris_home_current = format("{stack_root}/current")
++doris_fe_home = format("{stack_root}/current") + "/doris-fe"
++doris_be_home = format("{stack_root}/current") + "/doris-be"
++doris_broker_home= format("{stack_root}/current") + "/doris-hdfs_broker"
++
++# User & Group
++doris_user = config['configurations']['doris-env']['doris_user']
++doris_group = config['configurations']['doris-env']['doris_group']
++
++
++
++# Bin Dir
++# fe bin dir
++doris_fe_bin_path = doris_home_current + "/doris-fe/bin"
++# be bin dir
++doris_be_bin_path = doris_home_current + "/doris-be/bin"
++# broker bin dir
++doris_broker_bin_path = doris_home_current + "/doris-hdfs_broker/bin"
++# doris client bin dir
++doris_client_bin_path = doris_home_current + "/doris-client/bin"
++
++# Conf file path
++doris_fe_conf_dir = doris_home_current + '/doris-fe/conf'
++doris_be_conf_dir = doris_home_current + '/doris-be/conf'
++doris_broker_conf_dir = doris_home_current + '/doris-hdfs_broker/conf'
++fe_log_default_dir = "/var/log/doris/fe"
++be_log_default_dir = "/var/log/doris/be"
++hdfs_broker_log_default_dir = "/var/log/doris/hdfs_broker"
++
++# FE configuration parameters
++fe_log_dir = config['configurations']['doris-fe-conf']['fe_log_dir']
++fe_temp_dir = config['configurations']['doris-fe-conf']['fe_temp_dir']
++java_opts_for_jdk_9 = config['configurations']['doris-fe-conf']['java9_opts']
++java8_option = config['configurations']['doris-fe-conf']['java8_option']
++fe_sys_log_level = config['configurations']['doris-fe-conf']['sys_log_level']
++fe_meta_dir = config['configurations']['doris-fe-conf']['fe_meta_dir']
++http_port = config['configurations']['doris-fe-conf']['http_port']
++rpc_port = config['configurations']['doris-fe-conf']['rpc_port']
++query_port = config['configurations']['doris-fe-conf']['query_port']
++fe_query_port = config['configurations']['doris-fe-conf']['query_port']
++edit_log_port = config['configurations']['doris-fe-conf']['edit_log_port']
++fe_edit_log_port = config['configurations']['doris-fe-conf']['edit_log_port']
++qe_max_connection = config['configurations']['doris-fe-conf']['qe_max_connection']
++mysql_service_nio_enabled = config['configurations']['doris-fe-conf']['mysql_service_nio_enabled']
++enable_batch_delete_by_default = config['configurations']['doris-fe-conf']['enable_batch_delete_by_default']
++disable_storage_medium_check = config['configurations']['doris-fe-conf']['disable_storage_medium_check']
++default_storage_medium = config['configurations']['doris-fe-conf']['default_storage_medium']
++enable_materialized_view = config['configurations']['doris-fe-conf']['enable_materialized_view']
++dynamic_partition_enable = config['configurations']['doris-fe-conf']['dynamic_partition_enable']
++max_conn_per_user = config['configurations']['doris-fe-conf']['max_conn_per_user']
++qe_query_timeout_second = config['configurations']['doris-fe-conf']['qe_query_timeout_second']
++fe_root_password = config['configurations']['doris-fe-conf']['fe_root_password']
++fe_admin_password = config['configurations']['doris-fe-conf']['fe_admin_password']
++
++# BE configuration parameters
++be_log_dir = config['configurations']['doris-be-conf']['be_log_dir']
++PPROF_TMPDIR = config['configurations']['doris-be-conf']['PPROF_TMPDIR']
++be_sys_log_level = config['configurations']['doris-be-conf']['sys_log_level']
++be_data_path = config['configurations']['doris-be-conf']['be_data_path']
++be_port = config['configurations']['doris-be-conf']['be_port']
++be_rpc_port = config['configurations']['doris-be-conf']['be_rpc_port']
++webserver_port = config['configurations']['doris-be-conf']['webserver_port']
++heartbeat_service_port = config['configurations']['doris-be-conf']['heartbeat_service_port']
++be_heartbeat_service_port = config['configurations']['doris-be-conf']['heartbeat_service_port']
++brpc_port = config['configurations']['doris-be-conf']['brpc_port']
++storage_root_path = config['configurations']['doris-be-conf']['storage_root_path']
++spill_storage_root_path = config['configurations']['doris-be-conf']['spill_storage_root_path']
++
++
++# Broker configuration parameters
++broker_ipc_port = config['configurations']['doris-hdfs-broker-conf']['broker_ipc_port']
++client_expire_seconds = config['configurations']['doris-hdfs-broker-conf']['client_expire_seconds']
++broker_log_dir = config['configurations']['doris-hdfs-broker-conf']['broker_log_dir']
++
++#DORIS_FE
++doris_fe_hosts_list = config['clusterHostInfo']['doris_fe_hosts']
++doris_fe_hosts_list.sort()
++if len(doris_fe_hosts_list) > 0 :
++  doris_fe_host = doris_fe_hosts_list[0]
++#DORIS_FE_OBSERVER
++doris_fe_observer_hosts_list = config['clusterHostInfo']['doris_fe_observer_hosts']
++
++fe_root_password_sql = ''
++if fe_root_password != '' :
++  fe_root_password_sql = '-p{0}'.format(fe_root_password)
++
++# get fe master host 
++def get_leader_fe_host():
++  doris_fe_hosts_list = config['clusterHostInfo']['doris_fe_hosts']
++  if  len(doris_fe_hosts_list) == 0 :
++    raise Exception('can not get fe list , pls install fe first!')
++  for fe_host in doris_fe_hosts_list:
++    # doris -h datanode01 -P 9030  -u root  < /tmp/doris_get_fe_master.sql  | sed 's/\t/,/g' | grep 'FOLLOWER,true' | cut -d',' -f3
++    get_fe_leader_cmd = "echo \"SHOW PROC '/frontends'; \" > /tmp/doris_get_fe_master.sql &&  doris -h {0} -P {1}  -u root {2} < /tmp/doris_get_fe_master.sql  | sed 's/\t/,/g' | grep 'FOLLOWER,true' | cut -d',' -f3 ".format( fe_host, query_port, fe_root_password_sql)
++    get_fe_leader_cmd_v2 = "echo \"SHOW PROC '/frontends'; \" > /tmp/doris_get_fe_master.sql &&  doris -h {0} -P {1}  -u root {2} < /tmp/doris_get_fe_master.sql  | sed 's/\t/,/g' | grep 'FOLLOWER,true' | cut -d',' -f2 ".format( fe_host, query_port, fe_root_password_sql)
++    trytimes = 5
++    while ( trytimes > 0) :
++      try : 
++        Logger.info('try to connect fe host {0}  to get leader...'.format(fe_host))
++        result = os.popen(get_fe_leader_cmd).read()
++      except Exception as exception:
++        result = ''
++      if result != '' :
++        if re.match(r'^\d+$', result):
++          Logger.info(result + 'is port,change to get_fe_leader_cmd_v2')
++          get_fe_leader_cmd = get_fe_leader_cmd_v2
++          trytimes = 5
++        else:
++          break
++      else:
++        time.sleep(60)
++      trytimes = trytimes-1 
++
++    if  result != '' :
++      break
++
++  leader_fe_host = result.replace('\n', '')
++  if leader_fe_host == '' : 
++    Logger.error('exec cmd fail : {0}'.format(get_fe_leader_cmd))
++    raise Exception('can not get leader fe, pls check it!')
++    
++  Logger.info(leader_fe_host)
++  return leader_fe_host
++
++
++
++def check_process_exists(pid_file):
++  from resource_management.core import sudo
++  if not pid_file or not os.path.isfile(pid_file):
++    Logger.info("Pid file {0} is empty or does not exist".format(str(pid_file)))
++    raise ComponentIsNotRunning()
++
++  try:
++    pid_content = sudo.read_file(pid_file)
++    pid = int(pid_content) if pid_content.strip() else None
++  except:
++    Logger.info("Pid file {0} does not exist or does not contain a process id number".format(pid_file))
++    raise ComponentIsNotRunning()
++
++  try:
++    if pid is None:
++      return True
++    else:  
++      sudo.kill(pid, 0)
++      return True
++  except OSError:
++    Logger.info("Process with pid {0} is not running. Stale pid file"
++              " at {1}".format(pid, pid_file))
++    return False
++
++#kerberos
++security_enabled = config['configurations']['cluster-env']['security_enabled']
++kinit_path_local=""
++doris_user_keytab=""
++doris_user_principal_name=""
++doris_user_kinit_cmd=""
++if security_enabled :
++  kinit_path_local = get_kinit_path(default('/configurations/kerberos-env/executable_search_paths', None))
++  doris_user_keytab = config['configurations']['doris-env']['doris_user_keytab']
++  doris_user_principal_name = config['configurations']['doris-env']['doris_user_principal'] 
++  doris_user_kinit_cmd = format("{kinit_path_local} -kt {doris_user_keytab} {doris_user_principal_name};")
++  
++
++access_controller_type = "default"
++
++# get the correct version to use for checking stack features
++version_for_stack_feature_checks = get_stack_feature_version(config)
++
++stack_supports_ranger_kerberos = check_stack_feature(StackFeature.RANGER_KERBEROS_SUPPORT, version_for_stack_feature_checks)
++stack_supports_ranger_audit_db = check_stack_feature(StackFeature.RANGER_AUDIT_DB_SUPPORT, version_for_stack_feature_checks)
++
++
++# ranger doris plugin section start
++
++
++# to get db connector jar
++jdk_location = config['ambariLevelParams']['jdk_location']
++
++# ranger host
++ranger_admin_hosts = default("/clusterHostInfo/ranger_admin_hosts", [])
++has_ranger_admin = not len(ranger_admin_hosts) == 0
++
++# ranger support xml_configuration flag, instead of depending on ranger xml_configurations_supported/ranger-env introduced, using stack feature
++xml_configurations_supported = check_stack_feature(StackFeature.RANGER_XML_CONFIGURATION, version_for_stack_feature_checks)
++
++# ranger doris plugin enabled property
++enable_ranger_doris = default("/configurations/ranger-doris-plugin-properties/ranger-doris-plugin-enabled", "No")
++#Logger.info("/configurations/ranger-doris-plugin-properties/ranger-doris-plugin-enabled")
++#Logger.info(enable_ranger_doris)
++enable_ranger_doris = True if enable_ranger_doris.lower() == 'yes' else False
++#Logger.info(enable_ranger_doris)
++
++policymgr_mgr_url = config['configurations']['admin-properties']['policymgr_external_url']
++
++# ranger doris properties
++if enable_ranger_doris:
++  # get ranger policy url
++  policymgr_mgr_url = config['configurations']['admin-properties']['policymgr_external_url']
++  Logger.info(policymgr_mgr_url)
++  # can't get vaelue,temp enable it 
++  #if xml_configurations_supported:
++  #  policymgr_mgr_url = config['configurations']['ranger-doris-security']['ranger.plugin.doris.policy.rest.url']
++
++  if not is_empty(policymgr_mgr_url) and policymgr_mgr_url.endswith('/'):
++    policymgr_mgr_url = policymgr_mgr_url.rstrip('/')
++
++  # ranger audit db user
++  xa_audit_db_user = default('/configurations/admin-properties/audit_db_user', 'rangerlogger')
++
++  # ranger doris service/repository name
++  repo_name = str(config['clusterName']) + '_doris'
++  repo_name_value = config['configurations']['ranger-doris-security']['ranger.plugin.doris.service.name']
++  if not is_empty(repo_name_value) and repo_name_value != "{{repo_name}}":
++    repo_name = repo_name_value
++
++  common_name_for_certificate = config['configurations']['ranger-doris-plugin-properties']['common.name.for.certificate']
++  repo_config_username = config['configurations']['ranger-doris-plugin-properties']['REPOSITORY_CONFIG_USERNAME']
++  ranger_plugin_properties = config['configurations']['ranger-doris-plugin-properties']
++  policy_user = config['configurations']['ranger-doris-plugin-properties']['policy_user']
++  repo_config_password = config['configurations']['ranger-doris-plugin-properties']['REPOSITORY_CONFIG_PASSWORD']
++
++  # ranger-env config
++  ranger_env = config['configurations']['ranger-env']
++
++  # create ranger-env config having external ranger credential properties
++  if not has_ranger_admin and enable_ranger_doris:
++    external_admin_username = default('/configurations/ranger-doris-plugin-properties/external_admin_username', 'admin')
++    external_admin_password = default('/configurations/ranger-doris-plugin-properties/external_admin_password', 'admin')
++    external_ranger_admin_username = default('/configurations/ranger-doris-plugin-properties/external_ranger_admin_username', 'amb_ranger_admin')
++    external_ranger_admin_password = default('/configurations/ranger-doris-plugin-properties/external_ranger_admin_password', 'amb_ranger_admin')
++    ranger_env = {}
++    ranger_env['admin_username'] = external_admin_username
++    ranger_env['admin_password'] = external_admin_password
++    ranger_env['ranger_admin_username'] = external_ranger_admin_username
++    ranger_env['ranger_admin_password'] = external_ranger_admin_password
++
++  xa_audit_db_password = ''
++  if not is_empty(config['configurations']['admin-properties']['audit_db_password']) and stack_supports_ranger_audit_db and has_ranger_admin:
++    xa_audit_db_password = config['configurations']['admin-properties']['audit_db_password']
++
++  downloaded_custom_connector = None
++  previous_jdbc_jar_name = None
++  driver_curl_source = None
++  driver_curl_target = None
++  previous_jdbc_jar = None
++
++  if has_ranger_admin and stack_supports_ranger_audit_db:
++    xa_audit_db_flavor = config['configurations']['admin-properties']['DB_FLAVOR']
++    jdbc_jar_name, previous_jdbc_jar_name, audit_jdbc_url, jdbc_driver = get_audit_configs(config)
++
++    downloaded_custom_connector = format("{exec_tmp_dir}/{jdbc_jar_name}") if stack_supports_ranger_audit_db else None
++    driver_curl_source = format("{jdk_location}/{jdbc_jar_name}") if stack_supports_ranger_audit_db else None
++    driver_curl_target = format("{stack_root}/current/{component_directory}/lib/{jdbc_jar_name}") if stack_supports_ranger_audit_db else None
++    previous_jdbc_jar = format("{stack_root}/current/{component_directory}/lib/{previous_jdbc_jar_name}") if stack_supports_ranger_audit_db else None
++    sql_connector_jar = ''
++  
++
++  # warning: username/passsword should be doris's username/password,now the value is ranger's,pls modify after setup
++  # 'jdbc.url': 'jdbc:mysql://172.21.0.101:9030?useSSL=false',
++  doris_ranger_plugin_config = {
++    'username': repo_config_username,
++    'password': repo_config_password,
++    'jdbc.driver_class': 'com.mysql.cj.jdbc.Driver',
++    'jdbc.url': format('jdbc:mysql://{doris_fe_host}:{fe_query_port}?useSSL=false'),
++  
++    'resource.lookup.timeout.value.in.ms': '10000',
++  }
++
++  doris_ranger_plugin_config['policy.download.auth.users'] = doris_user
++  doris_ranger_plugin_config['tag.download.auth.users'] = doris_user
++  doris_ranger_plugin_config['policy.grantrevoke.auth.users'] = doris_user
++
++
++  custom_ranger_service_config = generate_ranger_service_config(ranger_plugin_properties)
++  if len(custom_ranger_service_config) > 0:
++    doris_ranger_plugin_config.update(custom_ranger_service_config)
++
++  doris_ranger_plugin_repo = {
++    'isEnabled': 'true',
++    'configs': doris_ranger_plugin_config,
++    'description': 'doris repo',
++    'name': repo_name,
++    'type': 'doris'
++  }
++
++
++  xa_audit_db_is_enabled = False
++  if xml_configurations_supported and stack_supports_ranger_audit_db:
++    xa_audit_db_is_enabled = config['configurations']['ranger-doris-audit']['xasecure.audit.destination.db']
++
++  xa_audit_hdfs_is_enabled = config['configurations']['ranger-doris-audit']['xasecure.audit.destination.hdfs'] if xml_configurations_supported else False
++  ssl_keystore_password = config['configurations']['ranger-doris-policymgr-ssl']['xasecure.policymgr.clientssl.keystore.password'] if xml_configurations_supported else None
++  ssl_truststore_password = config['configurations']['ranger-doris-policymgr-ssl']['xasecure.policymgr.clientssl.truststore.password'] if xml_configurations_supported else None
++  credential_file = format('/etc/ranger/{repo_name}/cred.jceks')
++
++  # for SQLA explicitly disable audit to DB for Ranger
++  if has_ranger_admin and stack_supports_ranger_audit_db and xa_audit_db_flavor.lower() == 'sqla':
++    xa_audit_db_is_enabled = False
++
++  # set doris fe conf
++  access_controller_type = "ranger-doris"
++
++# need this to capture cluster name from where ranger doris plugin is enabled
++cluster_name = config['clusterName']
++
++# ranger doris plugin section end
++
++
++dfs_type = default("/clusterLevelParams/dfs_type", "")
++hdfs_user = config['configurations']['hadoop-env']['hdfs_user']
++hdfs_principal_name = config['configurations']['hadoop-env']['hdfs_principal_name']
++hdfs_user_keytab = config['configurations']['hadoop-env']['hdfs_user_keytab']
++user_group = config['configurations']['cluster-env']['user_group']
++hdfs_resource_ignore_file = "/var/lib/ambari-agent/data/.hdfs_resource_ignore"
++hadoop_conf_dir = conf_select.get_hadoop_conf_dir()
++hadoop_bin_dir = stack_select.get_hadoop_dir("bin")
++default_fs = config['configurations']['core-site']['fs.defaultFS']
++hdfs_site = config['configurations']['hdfs-site']
++
++import functools
++#create partial functions with common arguments for every HdfsResource call
++#to create/delete hdfs directory/file/copyfromlocal we need to call params.HdfsResource in code
++HdfsResource = functools.partial(
++  HdfsResource,
++  user=hdfs_user,
++  hdfs_resource_ignore_file = hdfs_resource_ignore_file,
++  security_enabled = security_enabled,
++  keytab = hdfs_user_keytab,
++  kinit_path_local = kinit_path_local,
++  hadoop_bin_dir = hadoop_bin_dir,
++  hadoop_conf_dir = hadoop_conf_dir,
++  principal_name = hdfs_principal_name,
++  hdfs_site = hdfs_site,
++  default_fs = default_fs,
++  immutable_paths = get_not_managed_resources(),
++  dfs_type = dfs_type
++)
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/be.conf.j2
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/be.conf.j2 b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/be.conf.j2
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/be.conf.j2	(date 1735472554000)
+@@ -0,0 +1,68 @@
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements.  See the NOTICE file
++# distributed with this work for additional information
++# regarding copyright ownership.  The ASF licenses this file
++# to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#   http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++
++PPROF_TMPDIR={{PPROF_TMPDIR}}
++
++# since 1.2, the JAVA_HOME need to be set to run BE process.
++JAVA_HOME={{java_home}}
++
++# INFO, WARNING, ERROR, FATAL
++sys_log_level = {{be_sys_log_level}}
++
++# ports for admin, web, heartbeat service
++be_port = {{be_port}}
++be_rpc_port = {{be_rpc_port}}
++webserver_port = {{webserver_port}}
++heartbeat_service_port = {{heartbeat_service_port}}
++brpc_port = {{brpc_port}}
++
++# Choose one if there are more than one ip except loopback address.
++# Note that there should at most one ip match this list.
++# If no ip match this rule, will choose one randomly.
++# use CIDR format, e.g. 10.10.10.0/24
++# Default value is empty.
++# priority_networks = 10.10.10.0/24;192.168.0.0/16
++
++# data root path, separate by ';'
++# you can specify the storage medium of each root path, HDD or SSD
++# you can add capacity limit at the end of each root path, seperate by ','
++# eg:
++# storage_root_path = /home/disk1/doris.HDD,50;/home/disk2/doris.SSD,1;/home/disk2/doris
++# /home/disk1/doris.HDD, capacity limit is 50GB, HDD;
++# /home/disk2/doris.SSD, capacity limit is 1GB, SSD;
++# /home/disk2/doris, capacity limit is disk capacity, HDD(default)
++#
++# you also can specify the properties by setting
++# property 'medium' has a higher priority than the extension of path
++#
++# Default value is ${DORIS_HOME}/storage, you should create it by hand.
++# storage_root_path = ${DORIS_HOME}/storage
++
++# storage_root_path example:
++# storage_root_path=/opt1/doris,medium:hdd,capacity:3500;/opt2/doris,medium:hdd,capacity:3500;
++storage_root_path={{storage_root_path}}
++
++# Advanced configurations
++# sys_log_dir = ${DORIS_HOME}/log
++# sys_log_roll_mode = SIZE-MB-1024
++# sys_log_roll_num = 10
++# sys_log_verbose_modules = *
++# log_buffer_level = -1
++# palo_cgroups 
++
++
++
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/fe.conf.j2
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/fe.conf.j2 b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/fe.conf.j2
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/fe.conf.j2	(date 1735472554000)
+@@ -0,0 +1,76 @@
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements.  See the NOTICE file
++# distributed with this work for additional information
++# regarding copyright ownership.  The ASF licenses this file
++# to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#   http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++
++#####################################################################
++## The uppercase properties are read and exported by bin/start_fe.sh.
++## To see all Frontend configurations,
++## see fe/src/org/apache/doris/common/Config.java
++#####################################################################
++
++# the output dir of stderr and stdout
++LOG_DIR = ${DORIS_HOME}/log
++
++DATE = `date +%Y%m%d-%H%M%S`
++JAVA_OPTS = {{java8_option}}
++
++# For jdk 9+, this JAVA_OPTS will be used as default JVM options
++JAVA_OPTS_FOR_JDK_9={{java_opts_for_jdk_9}}
++
++##
++## the lowercase properties are read by main program.
++##
++
++# INFO, WARN, ERROR, FATAL
++sys_log_level = {{fe_sys_log_level}}
++
++# store metadata, must be created before start FE.
++# Default value is ${DORIS_HOME}/doris-meta
++fe_meta_dir = {{fe_meta_dir}}
++
++http_port = {{http_port}}
++rpc_port = {{rpc_port}}
++query_port = {{query_port}}
++edit_log_port = {{edit_log_port}}
++mysql_service_nio_enabled = {{mysql_service_nio_enabled}}
++
++# Choose one if there are more than one ip except loopback address.
++# Note that there should at most one ip match this list.
++# If no ip match this rule, will choose one randomly.
++# use CIDR format, e.g. 10.10.10.0/24
++# Default value is empty.
++# priority_networks = 10.10.10.0/24;192.168.0.0/16
++
++# Advanced configurations
++# log_roll_size_mb = 1024
++# sys_log_dir = ${DORIS_HOME}/log
++# sys_log_roll_num = 10
++# sys_log_verbose_modules = org.apache.doris
++# audit_log_dir = ${DORIS_HOME}/log
++# audit_log_modules = slow_query, query
++# audit_log_roll_num = 10
++# meta_delay_toleration_second = 10
++# qe_slow_log_ms = 5000
++
++enable_batch_delete_by_default={{enable_batch_delete_by_default}}
++disable_storage_medium_check={{disable_storage_medium_check}}
++default_storage_medium={{default_storage_medium}}
++qe_max_connection={{qe_max_connection}}
++dynamic_partition_enable={{dynamic_partition_enable}}
++enable_materialized_view={{enable_materialized_view}}
++max_conn_per_user = {{max_conn_per_user}}
++qe_query_timeout_second = {{qe_query_timeout_second}}
++
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/setup_ranger_doris.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/setup_ranger_doris.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/setup_ranger_doris.py
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/scripts/setup_ranger_doris.py	(date 1735472554000)
+@@ -0,0 +1,85 @@
++#!/usr/bin/env python3
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++from resource_management.core.logger import Logger
++from resource_management.libraries.functions.setup_ranger_plugin_xml import setup_ranger_plugin
++from resource_management.libraries.resources.xml_config import XmlConfig
++
++def setup_ranger_doris(upgrade_type=None, service_name="doris_fe"):
++  import params
++
++  if params.enable_ranger_doris:
++
++    stack_version = None
++
++    if upgrade_type is not None:
++      stack_version = params.version
++
++    if params.retryAble:
++      Logger.info("doris: Setup ranger: command retry enables thus retrying if ranger admin is down !")
++    else:
++      Logger.info("doris: Setup ranger: command retry not enabled thus skipping if ranger admin is down !")
++
++    if params.xa_audit_hdfs_is_enabled :
++      try:
++        params.HdfsResource("/ranger/audit",
++                           type="directory",
++                           action="create_on_execute",
++                           owner=params.doris_user,
++                           group=params.user_group,
++                           mode=0o755,
++                           recursive_chmod=True
++        )
++        params.HdfsResource("/ranger/audit/doris",
++                           type="directory",
++                           action="create_on_execute",
++                           owner=params.doris_user,
++                           group=params.user_group,
++                           mode=0o700,
++                           recursive_chmod=True
++        )
++  
++        params.HdfsResource(None, action="execute")
++      except Exception as err:
++        Logger.exception("Audit directory creation in HDFS for doris Ranger plugin failed with error:\n{0}".format(err))
++
++    api_version = 'v2'
++
++    setup_ranger_plugin('doris-fe', 'doris', params.previous_jdbc_jar, params.downloaded_custom_connector,
++                        params.driver_curl_source, params.driver_curl_target, params.java_home,
++                        params.repo_name, params.doris_ranger_plugin_repo,
++                        params.ranger_env, params.ranger_plugin_properties,
++                        params.policy_user, params.policymgr_mgr_url,
++                        params.enable_ranger_doris, conf_dict=params.doris_fe_conf_dir,
++                        component_user=params.doris_user, component_group=params.user_group, cache_service_list=['doris'],
++                        plugin_audit_properties=params.config['configurations']['ranger-doris-audit'], plugin_audit_attributes=params.config['configurationAttributes']['ranger-doris-audit'],
++                        plugin_security_properties=params.config['configurations']['ranger-doris-security'], plugin_security_attributes=params.config['configurationAttributes']['ranger-doris-security'],
++                        plugin_policymgr_ssl_properties=params.config['configurations']['ranger-doris-policymgr-ssl'], plugin_policymgr_ssl_attributes=params.config['configurationAttributes']['ranger-doris-policymgr-ssl'],
++                        component_list=['doris_fe'], audit_db_is_enabled=params.xa_audit_db_is_enabled,
++                        credential_file=params.credential_file, xa_audit_db_password=params.xa_audit_db_password,
++                        ssl_truststore_password=params.ssl_truststore_password, ssl_keystore_password=params.ssl_keystore_password,
++                        stack_version_override = stack_version, skip_if_rangeradmin_down= not params.retryAble, api_version=api_version,
++                        is_security_enabled = params.security_enabled,
++                        is_stack_supports_ranger_kerberos = params.stack_supports_ranger_kerberos if params.security_enabled else None,
++                        component_user_principal=params.doris_user_principal_name if params.security_enabled else None,
++                        component_user_keytab=params.doris_user_keytab if params.security_enabled else None)
++
++
++  else:
++    Logger.info('Ranger doris plugin is not enabled')
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/quicklinks/quicklinks.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/quicklinks/quicklinks.json b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/quicklinks/quicklinks.json
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/quicklinks/quicklinks.json	(date 1735472554000)
+@@ -0,0 +1,26 @@
++{
++  "name": "default",
++  "description": "default quick links configuration",
++  "configuration": {
++    "protocol": {
++      "type": "HTTP_ONLY"
++    },
++    "links": [
++      {
++        "name": "doris fe web ui",
++        "label": "Doris FE Web UI",
++        "component_name": "DORIS_FE",
++        "requires_user_name": "false",
++        "url": "%@://%@:%@",
++        "port": {
++          "http_property": "http_port",
++          "http_default_port": "8030",
++          "https_property": "http_port",
++          "https_default_port": "8030",
++          "regex": "^(\\d+)$",
++          "site": "doris-fe-conf"
++        }
++      }
++    ]
++  }
++}
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/alerts.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/alerts.json b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/alerts.json
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/alerts.json	(date 1735472554000)
+@@ -0,0 +1,88 @@
++{
++  "DORIS": {
++    "DORIS_FE": [
++      {
++        "description": "Doris FE Process Monitor",
++        "enabled": true,
++        "interval": 1,
++        "label": "Doris FE Process",
++        "name": "Doris FE Process",
++        "scope": "HOST",
++        "source": {
++          "type": "PORT",
++          "uri": "{{doris-fe-conf/http_port}}",
++          "default_port": 8031,
++          "reporting": {
++            "ok": {
++              "text": "TCP OK - {0:.3f}s response on port {1}"
++            },
++            "warning": {
++              "text": "TCP OK - {0:.3f}s response on port {1}",
++              "value": 2.5
++            },
++            "critical": {
++              "text": "Connection failed: {0} to {1}:{2}",
++              "value": 10.0
++            }
++          }
++        }
++      }
++    ],
++    "DORIS_BE": [
++      {
++        "description": "Doris BE Process Monitor",
++        "enabled": true,
++        "interval": 1,
++        "label": "Doris BE Process",
++        "name": "Doris BE Process",
++        "scope": "HOST",
++        "source": {
++          "type": "PORT",
++          "uri": "{{doris-be-conf/webserver_port}}",
++          "default_port": 8041,
++          "reporting": {
++            "ok": {
++              "text": "TCP OK - {0:.3f}s response on port {1}"
++            },
++            "warning": {
++              "text": "TCP OK - {0:.3f}s response on port {1}",
++              "value": 2.5
++            },
++            "critical": {
++              "text": "Connection failed: {0} to {1}:{2}",
++              "value": 10.0
++            }
++          }
++        }
++      }
++    ],
++    "DORIS_HDFS_BROKER": [
++      {
++        "description": "Doris Broker Process Monitor",
++        "enabled": true,
++        "interval": 1,
++        "label": "Doris Broker Process",
++        "name": "Doris Broker Process",
++        "scope": "HOST",
++        "source": {
++          "type": "PORT",
++          "uri": "{{doris-hdfs-broker-conf/broker_ipc_port}}",
++          "default_port": 8000,
++          "reporting": {
++            "ok": {
++              "text": "TCP OK - {0:.3f}s response on port {1}"
++            },
++            "warning": {
++              "text": "TCP OK - {0:.3f}s response on port {1}",
++              "value": 2.5
++            },
++            "critical": {
++              "text": "Connection failed: {0} to {1}:{2}",
++              "value": 10.0
++            }
++          }
++        }
++      }
++    ]
++  }
++}
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/metainfo.xml
+new file mode 100644
+--- /dev/null	(date 1735789174278)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/metainfo.xml	(date 1735789174278)
+@@ -0,0 +1,153 @@
++<?xml version="1.0"?>
++<!--
++   Licensed to the Apache Software Foundation (ASF) under one or more
++   contributor license agreements.  See the NOTICE file distributed with
++   this work for additional information regarding copyright ownership.
++   The ASF licenses this file to You under the Apache License, Version 2.0
++   (the "License"); you may not use this file except in compliance with
++   the License.  You may obtain a copy of the License at
++
++       http://www.apache.org/licenses/LICENSE-2.0
++
++   Unless required by applicable law or agreed to in writing, software
++   distributed under the License is distributed on an "AS IS" BASIS,
++   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++   See the License for the specific language governing permissions and
++   limitations under the License.
++-->
++<metainfo>
++    <schemaVersion>2.0</schemaVersion>
++    <services>
++        <service>
++            <name>DORIS</name>
++            <displayName>Doris2</displayName>
++            <comment>Component DORIS2 Integrated By JaneTTR . mail: 3832514048@qq.com ,git: https://gitee.com/tt-bigdata/ambari-env</comment>
++            <version>2.1.7</version>
++            <components>
++                <component>
++                    <name>DORIS_FE</name>
++                    <displayName>Doris Fe</displayName>
++                    <category>MASTER</category>
++                    <cardinality>1+</cardinality>
++                    <versionAdvertised>true</versionAdvertised>
++                    <commandScript>
++                        <script>scripts/fe.py</script>
++                        <scriptType>PYTHON</scriptType>
++                        <timeout>10000</timeout>
++                    </commandScript>
++                </component>
++                <component>
++                    <name>DORIS_FE_OBSERVER</name>
++                    <displayName>Doris Fe Observer</displayName>
++                    <category>SLAVE</category>
++                    <cardinality>0+</cardinality>
++                    <versionAdvertised>true</versionAdvertised>
++                    <commandScript>
++                        <script>scripts/fe_observer.py</script>
++                        <scriptType>PYTHON</scriptType>
++                        <timeout>10000</timeout>
++                    </commandScript>
++                </component>
++                <component>
++                    <name>DORIS_BE</name>
++                    <displayName>Doris Be</displayName>
++                    <category>SLAVE</category>
++                    <cardinality>1+</cardinality>
++                    <versionAdvertised>true</versionAdvertised>
++                    <commandScript>
++                        <script>scripts/be.py</script>
++                        <scriptType>PYTHON</scriptType>
++                        <timeout>10000</timeout>
++                    </commandScript>
++                    <customCommands>
++                        <customCommand>
++                            <name>DECOMMISSION</name>
++                            <commandScript>
++                                <script>scripts/be.py</script>
++                                <scriptType>PYTHON</scriptType>
++                                <timeout>600</timeout>
++                            </commandScript>
++                        </customCommand>
++                        <customCommand>
++                            <name>READD</name>
++                            <commandScript>
++                                <script>scripts/be.py</script>
++                                <scriptType>PYTHON</scriptType>
++                                <timeout>600</timeout>
++                            </commandScript>
++                        </customCommand>
++                    </customCommands>
++                </component>
++                <component>
++                    <name>DORIS_HDFS_BROKER</name>
++                    <displayName>Doris Hdfs Broker</displayName>
++                    <category>SLAVE</category>
++                    <cardinality>0+</cardinality>
++                    <versionAdvertised>true</versionAdvertised>
++                    <commandScript>
++                        <script>scripts/broker.py</script>
++                        <scriptType>PYTHON</scriptType>
++                        <timeout>600</timeout>
++                    </commandScript>
++                </component>
++                <component>
++                    <name>DORIS_CLIENT</name>
++                    <displayName>Doris Client</displayName>
++                    <category>CLIENT</category>
++                    <cardinality>1+</cardinality>
++                    <versionAdvertised>true</versionAdvertised>
++                    <commandScript>
++                        <script>scripts/doris_client.py</script>
++                        <scriptType>PYTHON</scriptType>
++                        <timeout>1200</timeout>
++                    </commandScript>
++                </component>
++            </components>
++
++            <osSpecifics>
++                <osSpecific>
++                    <osFamily>any</osFamily>
++                    <packages>
++                        <package>
++                            <name>doris_${stack_version}-fe</name>
++                        </package>
++                        <package>
++                            <name>doris_${stack_version}-be</name>
++                        </package>
++                        <package>
++                            <name>doris_${stack_version}-hdfs_broker</name>
++                        </package>
++                        <package>
++                            <name>doris_${stack_version}-client</name>
++                        </package>
++                    </packages>
++                </osSpecific>
++            </osSpecifics>
++
++            <configuration-dependencies>
++                <config-type>doris-env</config-type>
++                <config-type>doris-fe-conf</config-type>
++                <config-type>doris-fe-ldap-conf</config-type>
++                <config-type>doris-be-conf</config-type>
++                <config-type>doris-be-asan_suppr-conf</config-type>
++                <config-type>doris-be-lsan_suppr-conf</config-type>
++                <config-type>doris-be-odbcinst-ini</config-type>
++                <config-type>doris-hdfs-broker-conf</config-type>
++                <config-type>doris-hdfs-broker-log4j-properties</config-type>
++                <config-type>ranger-doris-plugin-properties</config-type>
++                <config-type>ranger-doris-audit</config-type>
++                <config-type>ranger-doris-policymgr-ssl</config-type>
++                <config-type>ranger-doris-security</config-type>
++                <config-type>doris-fe-log4j-properties</config-type>
++            </configuration-dependencies>
++
++            <restartRequiredAfterChange>true</restartRequiredAfterChange>
++            <quickLinksConfigurations>
++                <quickLinksConfiguration>
++                    <fileName>quicklinks.json</fileName>
++                    <default>true</default>
++                </quickLinksConfiguration>
++            </quickLinksConfigurations>
++        </service>
++    </services>
++</metainfo>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/broker.conf.j2
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/broker.conf.j2 b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/broker.conf.j2
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/broker.conf.j2	(date 1735472554000)
+@@ -0,0 +1,40 @@
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements.  See the NOTICE file
++# distributed with this work for additional information
++# regarding copyright ownership.  The ASF licenses this file
++# to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#   http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++
++#####################################################################
++## To see all Broker configurations,
++## see fs_brokers/apache_hdfs_broker/src/main/java/org/apache/doris/broker/hdfs/BrokerConfig.java
++#####################################################################
++
++# INFO, WARNING, ERROR, FATAL
++# sys_log_level = INFO
++
++# the thrift rpc port
++broker_ipc_port = {{broker_ipc_port}}
++
++# client session will be deleted if not receive ping after this time
++client_expire_seconds = {{client_expire_seconds}}
++
++# Advanced configurations
++# sys_log_dir = ${BROKER_HOME}/log
++# sys_log_roll_num = 30
++# sys_log_roll_mode = SIZE-MB-1024
++# sys_log_verbose_modules = org.apache.doris
++# audit_log_dir = ${BROKER_HOME}/log
++# audit_log_roll_num = 10
++# audit_log_roll_mode = TIME-DAY
++# audit_log_modules =
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/test_catalog.sql.j2
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/test_catalog.sql.j2 b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/test_catalog.sql.j2
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/package/templates/test_catalog.sql.j2	(date 1735472554000)
+@@ -0,0 +1,44 @@
++
++doris -uroot -P9030 -hdatanode01
++
++
++-- none ha
++
++DROP catalog hive_catalog; 
++
++CREATE CATALOG hive_catalog PROPERTIES (
++    'type'='hms',
++    'hive.metastore.uris' = 'thrift://datanode01:9083',
++    'hadoop.username' = 'hive',
++	'fs.defaultFS' = 'hdfs://datanode01:8020'
++);
++
++SHOW catalogs;
++
++SWITCH hive_catalog;
++
++SHOW DATABASES;
++
++use default;
++
++show tables;
++
++#select * from dim_date;
++
++
++DROP catalog paimon_hive_catalog; 
++
++CREATE CATALOG paimon_hive_catalog PROPERTIES (
++    "type" = "paimon",
++    "paimon.catalog.type" = "hms",
++    'hive.metastore.uris' = 'thrift://datanode01:9083',
++    "warehouse" = "hdfs://datanode01:8020//warehouse/tablespace/managed/hive/tablespace/managed/hive",
++    'hadoop.username' = 'hive',
++	'fs.defaultFS' = 'hdfs://datanode01:8020'
++);
++
++SHOW catalogs;
++
++SWITCH paimon_hive_catalog;
++
++
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-env.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-env.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-env.xml
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-env.xml	(date 1735472554000)
+@@ -0,0 +1,41 @@
++<?xml version="1.0"?>
++<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
++
++<configuration>
++    <property>
++        <name>doris_user</name>
++        <value>doris</value>
++        <property-type>USER</property-type>
++        <description>Doris User</description>
++        <value-attributes>
++            <type>user</type>
++            <overridable>false</overridable>
++            <user-groups>
++                <property>
++                    <type>cluster-env</type>
++                    <name>user_group</name>
++                </property>
++            </user-groups>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++    <property>
++        <name>doris_group</name>
++        <value>hadoop</value>
++        <property-type>GROUP</property-type>
++        <description>Doris Group</description>
++    </property>
++  
++  <property>
++    <name>doris_user_keytab</name>
++    <description>Doris keytab path</description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>doris_user_principal</name>
++    <description>Doris principal</description>
++    <property-type>KERBEROS_PRINCIPAL</property-type>
++    <on-ambari-upgrade add="false"/>
++  </property> 
++
++</configuration>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-conf.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-conf.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-conf.xml
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-conf.xml	(date 1735472554000)
+@@ -0,0 +1,168 @@
++<?xml version="1.0"?>
++<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
++
++<configuration supports_final="true">
++    <property>
++        <name>PPROF_TMPDIR</name>
++        <value>/var/log/doris/be</value>
++    </property>
++    <property>
++        <name>be_log_dir</name>
++        <value>/var/log/doris/be</value>
++        <description>Doris BE log</description>
++    </property>
++    <property>
++        <name>sys_log_level</name>
++        <value>INFO</value>
++        <description>INFO, WARNING, ERROR, FATAL</description>
++    </property>
++    <property>
++        <name>storage_root_path</name>
++        <value>/data1/doris,medium:HDD;/data2/doris,medium:SSD;</value>
++        <description>data root path, separate by ';'</description>
++    </property>
++    <property>
++        <name>spill_storage_root_path</name>
++        <value>/data1/doris_spill</value>
++        <description>data root path, separate by ';'</description>
++    </property>
++    <property>
++        <name>be_port</name>
++        <value>9060</value>
++        <description>BE thrift server port,request from fe.</description>
++    </property>
++    <property>
++        <name>be_rpc_port</name>
++        <value>9070</value>
++    </property>
++    <property>
++        <name>webserver_port</name>
++        <value>8041</value>
++        <description>BE http server port</description>
++    </property>
++    <property>
++        <name>heartbeat_service_port</name>
++        <value>9050</value>
++        <description>BE heartbeat thrift port , request from fe.</description>
++    </property>
++    <property>
++        <name>brpc_port</name>
++        <value>8060</value>
++        <description>BE brpc port ,betwwen be communication.</description>
++    </property>
++    <property>
++      <name>content</name>
++      <description>Doris BE Configure File</description>
++      <value># Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements.  See the NOTICE file
++# distributed with this work for additional information
++# regarding copyright ownership.  The ASF licenses this file
++# to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#   http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++
++PPROF_TMPDIR={{PPROF_TMPDIR}}
++LOG_DIR = {{be_log_dir}}
++
++JAVA_OPTS="-Xmx1024m -DlogPath=$LOG_DIR/jni.log -Xloggc:$LOG_DIR/be.gc.log.$CUR_DATE -Djavax.security.auth.useSubjectCredsOnly=false -Dsun.security.krb5.debug=true -Dsun.java.command=DorisBE -XX:-CriticalJNINatives"
++
++# For jdk 9+, this JAVA_OPTS will be used as default JVM options
++JAVA_OPTS_FOR_JDK_9="-Xmx1024m -DlogPath=$LOG_DIR/jni.log -Xlog:gc:$LOG_DIR/be.gc.log.$CUR_DATE -Djavax.security.auth.useSubjectCredsOnly=false -Dsun.security.krb5.debug=true -Dsun.java.command=DorisBE -XX:-CriticalJNINatives"
++
++# For jdk 17+, this JAVA_OPTS will be used as default JVM options
++JAVA_OPTS_FOR_JDK_17="-Xmx1024m -DlogPath=$LOG_DIR/jni.log -Xlog:gc:$LOG_DIR/be.gc.log.$CUR_DATE -Djavax.security.auth.useSubjectCredsOnly=false -Dsun.security.krb5.debug=true -Dsun.java.command=DorisBE -XX:-CriticalJNINatives --add-opens=java.base/java.net=ALL-UNNAMED"
++
++# since 1.2, the JAVA_HOME need to be set to run BE process.
++JAVA_HOME={{java_home}}
++
++# https://github.com/apache/doris/blob/master/docs/zh-CN/community/developer-guide/debug-tool.md#jemalloc-heap-profile
++# https://jemalloc.net/jemalloc.3.html
++JEMALLOC_CONF="percpu_arena:percpu,background_thread:true,metadata_thp:auto,muzzy_decay_ms:15000,dirty_decay_ms:15000,oversize_threshold:0,prof:false,lg_prof_interval:32,lg_prof_sample:19,prof_gdump:false,prof_accum:false,prof_leak:false,prof_final:false"
++JEMALLOC_PROF_PRFIX=""
++
++# INFO, WARNING, ERROR, FATAL
++sys_log_level = {{be_sys_log_level}}
++
++# ports for admin, web, heartbeat service
++be_port = {{be_port}}
++be_rpc_port = {{be_rpc_port}}
++webserver_port = {{webserver_port}}
++heartbeat_service_port = {{heartbeat_service_port}}
++brpc_port = {{brpc_port}}
++arrow_flight_sql_port = -1
++
++# HTTPS configures
++enable_https = false
++# path of certificate in PEM format.
++ssl_certificate_path = "$DORIS_HOME/conf/cert.pem"
++# path of private key in PEM format.
++ssl_private_key_path = "$DORIS_HOME/conf/key.pem"
++
++# Choose one if there are more than one ip except loopback address.
++# Note that there should at most one ip match this list.
++# If no ip match this rule, will choose one randomly.
++# use CIDR format, e.g. 10.10.10.0/24 or IP format, e.g. 10.10.10.1
++# Default value is empty.
++# priority_networks = 10.10.10.0/24;192.168.0.0/16
++
++# data root path, separate by ';'
++# You can specify the storage type for each root path, HDD (cold data) or SSD (hot data)
++																		  
++# eg:
++# storage_root_path = /home/disk1/doris;/home/disk2/doris;/home/disk2/doris
++# storage_root_path = /home/disk1/doris,medium:SSD;/home/disk2/doris,medium:SSD;/home/disk2/doris,medium:HDD
++													
++# /home/disk2/doris,medium:HDD(default)
++# 
++# you also can specify the properties by setting '&lt;property&gt;:&lt;value&gt;', separate by ','
++# property 'medium' has a higher priority than the extension of path
++#
++# Default value is ${DORIS_HOME}/storage, you should create it by hand.
++# storage_root_path = ${DORIS_HOME}/storage
++
++storage_root_path = {{storage_root_path}}
++
++#spill_storage_root_path
++spill_storage_root_path = {{spill_storage_root_path}}
++
++# Default dirs to put jdbc drivers,default value is ${DORIS_HOME}/jdbc_drivers
++# jdbc_drivers_dir = ${DORIS_HOME}/jdbc_drivers
++
++# Advanced configurations
++sys_log_dir = ${LOG_DIR}
++# sys_log_dir = ${DORIS_HOME}/log
++# sys_log_roll_mode = SIZE-MB-1024
++# sys_log_roll_num = 10
++# sys_log_verbose_modules = *
++# log_buffer_level = -1
++# palo_cgroups 
++
++# aws sdk log level
++#    Off = 0,
++#    Fatal = 1,
++#    Error = 2,
++#    Warn = 3,
++#    Info = 4,
++#    Debug = 5,
++#    Trace = 6
++# Default to turn off aws sdk log, because aws sdk errors that need to be cared will be output through Doris logs
++aws_log_level=0
++## If you are not running in aws cloud, you can disable EC2 metadata
++AWS_EC2_METADATA_DISABLED=true
++
++      </value>
++    </property>
++</configuration>
++
++
++
++
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-security.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-security.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-security.xml
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-security.xml	(date 1735472554000)
+@@ -0,0 +1,76 @@
++<?xml version="1.0"?>
++<!--
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++-->
++<configuration>
++  <property>
++    <name>ranger.plugin.doris.service.name</name>
++    <value>{{repo_name}}</value>
++    <description>Name of the Ranger service containing Doris policies</description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>ranger.plugin.doris.policy.source.impl</name>
++    <value>org.apache.ranger.admin.client.RangerAdminRESTClient</value>
++    <description>Class to retrieve policies from the source</description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>ranger.plugin.doris.policy.rest.url</name>
++    <value>{{policymgr_mgr_url}}</value>
++    <description>URL to Ranger Admin</description>
++    <on-ambari-upgrade add="false"/>
++    <depends-on>
++      <property>
++        <type>admin-properties</type>
++        <name>policymgr_external_url</name>
++      </property>
++    </depends-on>
++  </property>
++  <property>
++    <name>ranger.plugin.doris.policy.rest.ssl.config.file</name>
++    <value>/etc/doris/conf/ranger-policymgr-ssl.xml</value>
++    <description>Path to the file containing SSL details to contact Ranger Admin</description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>ranger.plugin.doris.policy.pollIntervalMs</name>
++    <value>30000</value>
++    <description>How often to poll for changes in policies?</description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>ranger.plugin.doris.policy.rest.client.read.timeoutMs</name>
++    <value>60000</value>
++    <description>ranger.plugin.doris.policy.rest.client.read.timeoutMs</description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>ranger.plugin.doris.policy.rest.client.connection.timeoutMs</name>
++    <value>60000</value>
++    <description>ranger.plugin.doris.policy.rest.client.connection.timeoutMs</description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>ranger.plugin.doris.policy.cache.dir</name>
++    <value>/etc/ranger/{{repo_name}}/policycache</value>
++    <description>Directory where Ranger policies are cached after successful retrieval from the source</description>
++    <on-ambari-upgrade add="false"/>
++  </property> 
++</configuration>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-hdfs-broker-conf.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-hdfs-broker-conf.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-hdfs-broker-conf.xml
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-hdfs-broker-conf.xml	(date 1735472554000)
+@@ -0,0 +1,67 @@
++<?xml version="1.0"?>
++<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
++
++<configuration supports_final="true">
++    <property>
++        <name>broker_ipc_port</name>
++        <value>8000</value>
++    </property>
++    <property>
++        <name>client_expire_seconds</name>
++        <value>300</value>
++    </property>
++    <property>
++        <name>broker_log_dir</name>
++        <value>/var/log/doris/hdfs_broker</value>
++    </property>
++	<property>
++        <name>content</name>
++        <description>Doris hdfs-broker Configure File</description>
++        <value># Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements.  See the NOTICE file
++# distributed with this work for additional information
++# regarding copyright ownership.  The ASF licenses this file
++# to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#   http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++
++#####################################################################
++## To see all Broker configurations,
++## see fs_brokers/apache_hdfs_broker/src/main/java/org/apache/doris/broker/hdfs/BrokerConfig.java
++#####################################################################
++
++# INFO, WARNING, ERROR, FATAL
++# sys_log_level = INFO
++
++# the thrift rpc port
++broker_ipc_port = {{broker_ipc_port}}
++
++# client session will be deleted if not receive ping after this time
++client_expire_seconds = {{client_expire_seconds}}
++
++# Advanced configurations
++sys_log_dir = {{broker_log_dir}}
++# sys_log_dir = ${BROKER_HOME}/log
++# sys_log_roll_num = 30
++# sys_log_roll_mode = SIZE-MB-1024
++# sys_log_verbose_modules = org.apache.doris
++
++audit_log_dir = {{broker_log_dir}}
++# audit_log_dir = ${BROKER_HOME}/log
++# audit_log_roll_num = 10
++# audit_log_roll_mode = TIME-DAY
++# audit_log_modules =
++
++		</value>
++	</property>
++</configuration>
++
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-asan_suppr-conf.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-asan_suppr-conf.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-asan_suppr-conf.xml
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-asan_suppr-conf.xml	(date 1735472554000)
+@@ -0,0 +1,63 @@
++<?xml version="1.0"?>
++<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
++<!--
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++-->
++<configuration supports_adding_forbidden="true">
++    <property>
++        <name>content</name>
++        <description>doris be asan_suppr.conf</description>
++        <value>
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements.  See the NOTICE file
++# distributed with this work for additional information
++# regarding copyright ownership.  The ASF licenses this file
++# to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#   http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++
++# thrift
++interceptor_via_fun:doris::FrontendServiceClient::recv_finishTask
++interceptor_via_fun:doris::FrontendServiceClient::recv_streamLoadPut
++interceptor_via_fun:doris::FrontendService_report_pargs::write
++interceptor_via_fun:doris::FrontendServiceClient::recv_loadTxnPreCommit
++interceptor_via_fun:doris::ThriftClientImpl::close
++
++# java-udf
++interceptor_via_fun:MethodHandles::init_method_MemberName
++interceptor_via_fun:JavaCalls::call_helper
++interceptor_via_fun:JavaThread::run
++interceptor_via_fun:InterpreterRuntime::resolve_invoke
++
++        </value>
++        <value-attributes>
++            <type>content</type>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++</configuration>
+\ No newline at end of file
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-lsan_suppr-conf.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-lsan_suppr-conf.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-lsan_suppr-conf.xml
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-lsan_suppr-conf.xml	(date 1735472554000)
+@@ -0,0 +1,53 @@
++<?xml version="1.0"?>
++<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
++<!--
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++-->
++<configuration supports_adding_forbidden="true">
++    <property>
++        <name>content</name>
++        <description>doris be Isan_suppr.conf</description>
++        <value>
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements.  See the NOTICE file
++# distributed with this work for additional information
++# regarding copyright ownership.  The ASF licenses this file
++# to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#   http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++
++# This is a known leak.
++leak:brpc
++
++        </value>
++        <value-attributes>
++            <type>content</type>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++</configuration>
+\ No newline at end of file
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-fe-conf.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-fe-conf.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-fe-conf.xml
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-fe-conf.xml	(date 1735472554000)
+@@ -0,0 +1,226 @@
++<?xml version="1.0"?>
++<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
++<configuration supports_final="true">
++    <property>
++        <name>fe_log_dir</name>
++        <value>/var/log/doris/fe</value>
++        <description>Doris FE log</description>
++    </property>
++	<property>
++        <name>fe_temp_dir</name>
++        <value>/tmp/doris/fe</value>
++        <description>Doris FE log</description>
++    </property>
++    <property>
++        <name>java8_option</name>
++        <value>"-Xmx8192m -XX:+UseMembar -XX:SurvivorRatio=8 -XX:MaxTenuringThreshold=7 -XX:+PrintGCDateStamps -XX:+PrintGCDetails -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+CMSClassUnloadingEnabled -XX:-CMSParallelRemarkEnabled -XX:CMSInitiatingOccupancyFraction=80 -XX:SoftRefLRUPolicyMSPerMB=0 -Xloggc:$LOG_DIR/fe.gc.log.$DATE -Dlog4j2.formatMsgNoLookups=true"
++        </value>
++        <description>JAVA_OPTS</description>
++    </property>
++    <property>
++        <name>java9_opts</name>
++        <value>"-Xmx4096m -XX:SurvivorRatio=8 -XX:MaxTenuringThreshold=7 -XX:+CMSClassUnloadingEnabled -XX:-CMSParallelRemarkEnabled -XX:CMSInitiatingOccupancyFraction=80 -XX:SoftRefLRUPolicyMSPerMB=0 -Xlog:gc*:$LOG_DIR/fe.gc.log.$DATE:time"
++        </value>
++        <description>For jdk 9+, this JAVA_OPTS will be used as default JVM options</description>
++    </property>
++    <property>
++        <name>sys_log_level</name>
++        <value>INFO</value>
++        <description>INFO, WARN, ERROR, FATAL</description>
++    </property>
++    <property>
++        <name>fe_meta_dir</name>
++        <value>/var/lib/doris/metadata</value>
++        <description>FE metadata directory,must be craeted before start.</description>
++    </property>
++    <property>
++        <name>http_port</name>
++        <value>8031</value>
++        <description>FE  Http Server port.</description>
++    </property>
++    <property>
++        <name>rpc_port</name>
++        <value>9020</value>
++        <description>FE thrift server port, every fe config neeed be same.</description>
++    </property>
++    <property>
++        <name>query_port</name>
++        <value>9030</value>
++        <description>FE mysql server port.</description>
++    </property>
++    <property>
++        <name>edit_log_port</name>
++        <value>9010</value>
++        <description>FE  BDBJE communication port.</description>
++    </property>
++    <property>
++        <name>qe_max_connection</name>
++        <value>1024</value>
++    </property>
++    <property>
++        <name>mysql_service_nio_enabled</name>
++        <value>true</value>
++    </property>
++    <property>
++        <name>enable_batch_delete_by_default</name>
++        <value>true</value>
++        <description></description>
++    </property>
++    <property>
++        <name>disable_storage_medium_check</name>
++        <value>false</value>
++        <description></description>
++    </property>
++    <property>
++        <name>default_storage_medium</name>
++        <value>HDD</value>
++        <description>default hdd</description>
++    </property>
++    <property>
++        <name>dynamic_partition_enable</name>
++        <value>true</value>
++        <description></description>
++    </property>
++    <property>
++        <name>enable_materialized_view</name>
++        <value>true</value>
++        <description></description>
++    </property>
++    <property>
++        <name>max_conn_per_user</name>
++        <value>100</value>
++    </property>
++    <property>
++        <name>qe_query_timeout_second</name>
++        <value>300</value>
++    </property>
++
++    <property>
++      <name>fe_root_password</name>
++      <value></value>
++      <property-type>PASSWORD</property-type>
++      <value-attributes>
++        <type>password</type>
++        <empty-value-valid>true</empty-value-valid>
++      </value-attributes>
++      <description>password for fe root</description>
++      <on-ambari-upgrade add="true"/>
++    </property>
++
++    <property>
++      <name>fe_admin_password</name>
++      <value></value>
++      <property-type>PASSWORD</property-type>
++      <value-attributes>
++        <type>password</type>
++        <empty-value-valid>true</empty-value-valid>
++      </value-attributes>
++      <description>password for fe admin</description>
++      <on-ambari-upgrade add="true"/>
++    </property>
++
++    <property>
++      <name>content</name>
++      <description>Doris FE Configure File</description>
++      <value># Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements.  See the NOTICE file
++# distributed with this work for additional information
++# regarding copyright ownership.  The ASF licenses this file
++# to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#   http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++
++#####################################################################
++## The uppercase properties are read and exported by bin/start_fe.sh.
++## To see all Frontend configurations,
++## see fe/src/org/apache/doris/common/Config.java
++#####################################################################
++
++CUR_DATE=`date +%Y%m%d-%H%M%S`
++
++# the output dir of stderr and stdout
++#LOG_DIR = ${DORIS_HOME}/log
++LOG_DIR = {{fe_log_dir}}
++
++DATE = `date +%Y%m%d-%H%M%S`
++JAVA_OPTS = {{java8_option}}
++
++# CMS JAVA OPTS
++# JAVA_OPTS="-Dsun.security.krb5.debug=true -Djavax.security.auth.useSubjectCredsOnly=false -Xss4m -Xmx8192m -XX:+UseMembar -XX:SurvivorRatio=8 -XX:MaxTenuringThreshold=7 -XX:+PrintGCDateStamps -XX:+PrintGCDetails -XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+CMSClassUnloadingEnabled -XX:-CMSParallelRemarkEnabled -XX:CMSInitiatingOccupancyFraction=80 -XX:SoftRefLRUPolicyMSPerMB=0 -Xloggc:$LOG_DIR/fe.gc.log.$CUR_DATE"
++
++# G1 JAVA OPTS
++# JAVA_OPTS="-Djavax.security.auth.useSubjectCredsOnly=false -Xss4m -Xmx8192m -XX:+UnlockExperimentalVMOptions -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -XX:+PrintGCDateStamps -XX:+PrintGCDetails -Xloggc:$LOG_DIR/fe.gc.log.$CUR_DATE -Dlog4j2.formatMsgNoLookups=true"
++
++# For jdk 9+, this JAVA_OPTS_FOR_JDK_9 will be used as default CMS JVM options
++# JAVA_OPTS_FOR_JDK_9="-Dsun.security.krb5.debug=true -Djavax.security.auth.useSubjectCredsOnly=false -Xss4m -Xmx8192m -XX:SurvivorRatio=8 -XX:MaxTenuringThreshold=7 -XX:+CMSClassUnloadingEnabled -XX:-CMSParallelRemarkEnabled -XX:CMSInitiatingOccupancyFraction=80 -XX:SoftRefLRUPolicyMSPerMB=0 -Xlog:gc*:$LOG_DIR/fe.gc.log.$CUR_DATE:time"
++
++# For jdk 9+, this JAVA_OPTS_FOR_JDK_9 will be used as default G1 JVM options
++JAVA_OPTS_FOR_JDK_9="-Djavax.security.auth.useSubjectCredsOnly=false -Xss4m -Xmx8192m -XX:+UseG1GC -XX:MaxGCPauseMillis=200 -Xlog:gc*:$LOG_DIR/fe.gc.log.$CUR_DATE:time -Dlog4j2.formatMsgNoLookups=true"
++
++# For jdk 17+, this JAVA_OPTS will be used as default JVM options
++JAVA_OPTS_FOR_JDK_17="-Djavax.security.auth.useSubjectCredsOnly=false -XX:+UseZGC -Xmx8192m -Xms8192m -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=$LOG_DIR/ -Xlog:gc*:$LOG_DIR/fe.gc.log.$CUR_DATE:time"
++
++##
++## the lowercase properties are read by main program.
++##
++
++# INFO, WARN, ERROR, FATAL
++sys_log_level = {{fe_sys_log_level}}
++
++# store metadata, must be created before start FE.
++# Default value is ${DORIS_HOME}/doris-meta
++#fe_meta_dir = {{fe_meta_dir}}
++meta_dir = {{fe_meta_dir}}
++
++# Default dirs to put jdbc drivers,default value is ${DORIS_HOME}/jdbc_drivers
++# jdbc_drivers_dir = ${DORIS_HOME}/jdbc_drivers
++
++http_port = {{http_port}}
++rpc_port = {{rpc_port}}
++query_port = {{query_port}}
++edit_log_port = {{edit_log_port}}
++arrow_flight_sql_port = -1
++mysql_service_nio_enabled = {{mysql_service_nio_enabled}}
++
++# Choose one if there are more than one ip except loopback address.
++# Note that there should at most one ip match this list.
++# If no ip match this rule, will choose one randomly.
++# use CIDR format, e.g. 10.10.10.0/24 or IP format, e.g. 10.10.10.1
++# Default value is empty.
++# priority_networks = 10.10.10.0/24;192.168.0.0/16
++
++# Advanced configurations
++# log_roll_size_mb = 1024
++# sys_log_dir = ${DORIS_HOME}/log
++# sys_log_roll_num = 10
++# sys_log_verbose_modules = org.apache.doris
++# audit_log_dir = ${DORIS_HOME}/log
++# audit_log_modules = slow_query, query
++# audit_log_roll_num = 10
++# meta_delay_toleration_second = 10
++# qe_max_connection = 1024
++# qe_query_timeout_second = 300
++# qe_slow_log_ms = 5000
++
++enable_batch_delete_by_default={{enable_batch_delete_by_default}}
++disable_storage_medium_check={{disable_storage_medium_check}}
++default_storage_medium={{default_storage_medium}}
++qe_max_connection={{qe_max_connection}}
++dynamic_partition_enable={{dynamic_partition_enable}}
++enable_materialized_view={{enable_materialized_view}}
++max_conn_per_user = {{max_conn_per_user}}
++qe_query_timeout_second = {{qe_query_timeout_second}}
++
++access_controller_type = {{access_controller_type}}
++      </value>
++    </property>
++</configuration>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-fe-ldap-conf.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-fe-ldap-conf.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-fe-ldap-conf.xml
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-fe-ldap-conf.xml	(date 1735472554000)
+@@ -0,0 +1,92 @@
++<?xml version="1.0"?>
++<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
++<!--
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++-->
++<configuration supports_adding_forbidden="true">
++    <property>
++        <name>content</name>
++        <description>doris fe ldap.conf.</description>
++        <value>
++<![CDATA[
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements.  See the NOTICE file
++# distributed with this work for additional information
++# regarding copyright ownership.  The ASF licenses this file
++# to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#   http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++
++#####################################################################
++## To see all LDAP configurations,
++## see fe/src/org/apache/doris/common/LdapConfig.java
++#####################################################################
++
++# LDAP server configuration
++# If you want to enable LDAP authentication, you should:
++## step1: Configure the following parameters:
++# ldap_authentication_enabled - Flag to enable LDAP authentication. Specify 'true' to enable ldap authentication.
++# ldap_host - LDAP server ip.
++# ldap_port - LDAP server port.
++# ldap_admin_name - The DN to bind as connection, this admin DN will be used to lookup information about other users.
++# ldap_user_basedn - Search base for users.
++# ldap_user_filter - User lookup filter, the placeholder {login} will be replaced by the user supplied login.
++# ldap_group_basedn - Search base for groups.
++## step2: Restart fe, and use root or admin account to log in to doris.
++## step3: Execute sql statement to set ldap admin password:
++# set ldap_admin_password = 'password';
++ldap_authentication_enabled = false
++ldap_host = 127.0.0.1
++ldap_port = 389
++ldap_admin_name = cn=admin,dc=domain,dc=com
++ldap_user_basedn = ou=people,dc=domain,dc=com
++ldap_user_filter = (&(uid={login}))
++ldap_group_basedn = ou=group,dc=domain,dc=com
++
++# ldap_cache_time_out_s = 12 * 60 * 60;
++
++# LDAP pool configuration
++# https://docs.spring.io/spring-ldap/docs/2.3.3.RELEASE/reference/#pool-configuration
++# ldap_pool_max_active = 8
++# ldap_pool_max_total = -1
++# ldap_pool_max_idle = 8
++# ldap_pool_min_idle = 0
++# ldap_pool_max_wait = -1
++# ldap_pool_when_exhausted = 1
++# ldap_pool_test_on_borrow = false
++# ldap_pool_test_on_return = false
++# ldap_pool_test_while_idle = false
++
++]]>
++        </value>
++        <value-attributes>
++            <type>content</type>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++</configuration>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-audit.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-audit.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-audit.xml
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-audit.xml	(date 1735472554000)
+@@ -0,0 +1,133 @@
++<?xml version="1.0"?>
++<!--
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++-->
++<configuration>
++  <property>
++    <name>xasecure.audit.is.enabled</name>
++    <value>false</value>
++    <description>Is Audit enabled?</description>
++    <value-attributes>
++      <type>boolean</type>
++    </value-attributes>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>xasecure.audit.destination.hdfs</name>
++    <value>false</value>
++    <display-name>Audit to HDFS</display-name>
++    <description>Is Audit to HDFS enabled?</description>
++    <value-attributes>
++      <type>boolean</type>
++    </value-attributes>
++    <depends-on>
++      <property>
++        <type>ranger-env</type>
++        <name>xasecure.audit.destination.hdfs</name>
++      </property>
++    </depends-on>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>xasecure.audit.destination.hdfs.dir</name>
++    <value>hdfs://NAMENODE_HOSTNAME:8020/ranger/audit</value>
++    <description>HDFS folder to write audit to, make sure the service user has requried permissions</description>
++    <depends-on>
++      <property>
++        <type>ranger-env</type>
++        <name>xasecure.audit.destination.hdfs.dir</name>
++      </property>
++    </depends-on>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>xasecure.audit.destination.hdfs.batch.filespool.dir</name>
++    <value>/var/log/doris/audit/hdfs/spool</value>
++    <description>/var/log/doris/audit/hdfs/spool</description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>xasecure.audit.destination.solr</name>
++    <value>false</value>
++    <display-name>Audit to SOLR</display-name>
++    <description>Is Solr audit enabled?</description>
++    <value-attributes>
++      <type>boolean</type>
++    </value-attributes>
++    <depends-on>
++      <property>
++        <type>ranger-env</type>
++        <name>xasecure.audit.destination.solr</name>
++      </property>
++    </depends-on>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>xasecure.audit.destination.solr.urls</name>
++    <value/>
++    <description>Solr URL</description>
++    <value-attributes>
++      <empty-value-valid>true</empty-value-valid>
++    </value-attributes>
++    <depends-on>
++      <property>
++        <type>ranger-admin-site</type>
++        <name>ranger.audit.solr.urls</name>
++      </property>
++    </depends-on>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>xasecure.audit.destination.solr.zookeepers</name>
++    <value>NONE</value>
++    <description>Solr Zookeeper string</description>
++    <depends-on>
++      <property>
++        <type>ranger-admin-site</type>
++        <name>ranger.audit.solr.zookeepers</name>
++      </property>
++    </depends-on>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>xasecure.audit.destination.solr.batch.filespool.dir</name>
++    <value>/var/log/doris/audit/solr/spool</value>
++    <description>/var/log/doris/audit/solr/spool</description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>xasecure.audit.provider.summary.enabled</name>
++    <value>false</value>
++    <display-name>Audit provider summary enabled</display-name>
++    <description>Enable Summary audit?</description>
++    <value-attributes>
++      <type>boolean</type>
++    </value-attributes>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>ranger.plugin.doris.ambari.cluster.name</name>
++    <value>{{cluster_name}}</value>
++    <description>Capture cluster name from where Ranger doris plugin is enabled.</description>
++    <value-attributes>
++      <empty-value-valid>true</empty-value-valid>
++    </value-attributes>
++    <on-ambari-upgrade add="false"/>
++  </property>
++</configuration>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-odbcinst-ini.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-odbcinst-ini.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-odbcinst-ini.xml
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-be-odbcinst-ini.xml	(date 1735472554000)
+@@ -0,0 +1,75 @@
++<?xml version="1.0"?>
++<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
++<!--
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++-->
++<configuration supports_adding_forbidden="true">
++    <property>
++        <name>content</name>
++        <description>doris be odbcinst.ini</description>
++        <value>
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements.  See the NOTICE file
++# distributed with this work for additional information
++# regarding copyright ownership.  The ASF licenses this file
++# to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#   http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++
++# Example driver definitions, you should not use the example odbc driver
++# before you prepare env in your server 
++
++# Driver from the postgresql-odbc package
++# Setup from the unixODBC package
++[PostgreSQL]
++Description     = ODBC for PostgreSQL
++Driver          = /usr/lib/psqlodbc.so
++Setup           = /usr/lib/libodbcpsqlS.so
++FileUsage       = 1
++
++
++# Driver from the mysql-connector-odbc package
++# Setup from the unixODBC package
++[MySQL ODBC 8.0 Unicode Driver]
++Description     = ODBC for MySQL
++Driver          = /usr/lib64/libmyodbc8w.so
++FileUsage       = 1
++
++# Driver from the oracle-connector-odbc package
++# Setup from the unixODBC package
++[Oracle 19 ODBC driver]
++Description=Oracle ODBC driver for Oracle 19
++Driver=/usr/lib/libsqora.so.19.1
++
++        </value>
++        <value-attributes>
++            <type>content</type>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++</configuration>
+\ No newline at end of file
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/kerberos.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/kerberos.json b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/kerberos.json
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/kerberos.json	(date 1735472554000)
+@@ -0,0 +1,44 @@
++{
++  "services": [
++    {
++      "name": "DORIS",
++      "identities": [
++        {
++          "name": "doris_smokeuser",
++          "reference": "/smokeuser"
++        },
++        {
++          "name": "doris_user",
++          "principal": {
++            "value": "${doris-env/doris_user}${principal_suffix}@${realm}",
++            "type" : "user",
++            "local_username" : "${doris-env/doris_user}",
++            "configuration": "doris-env/doris_user_principal"
++          },
++          "keytab": {
++            "file": "${keytab_dir}/doris.headless.keytab",
++            "owner": {
++              "name": "${doris-env/doris_user}",
++              "access": "r"
++            },
++            "group": {
++              "name": "${cluster-env/user_group}",
++              "access": "r"
++            },
++            "configuration": "doris-env/doris_user_keytab"
++          }
++        }
++      ],
++      "configurations": [
++      ],
++      "components": [
++        {
++          "name": "DORIS_FE"
++        },
++        {
++          "name": "DORIS_BE"
++        }
++      ]
++    }
++  ]
++}
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/service_advisor.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/service_advisor.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/service_advisor.py
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/service_advisor.py	(date 1735472554000)
+@@ -0,0 +1,233 @@
++#!/usr/bin/env ambari-python-wrap
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++"""
++
++# Python imports
++import importlib.util
++import os
++import traceback
++import re
++import socket
++import fnmatch
++
++
++from resource_management.core.logger import Logger
++
++SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
++STACKS_DIR = os.path.join(SCRIPT_DIR, '../../../../../stacks/')
++PARENT_FILE = os.path.join(STACKS_DIR, 'service_advisor.py')
++
++try:
++  if "BASE_SERVICE_ADVISOR" in os.environ:
++    PARENT_FILE = os.environ["BASE_SERVICE_ADVISOR"]
++  with open(PARENT_FILE, 'rb') as fp:
++    spec = importlib.util.spec_from_file_location('service_advisor', PARENT_FILE)
++    service_advisor = importlib.util.module_from_spec(spec)
++    spec.loader.exec_module(service_advisor) 
++except Exception as e:
++  traceback.print_exc()
++  print("Failed to load parent")
++
++
++class DorisServiceAdvisor(service_advisor.ServiceAdvisor):
++
++  def __init__(self, *args, **kwargs):
++    self.as_super = super(DorisServiceAdvisor, self)
++    self.as_super.__init__(*args, **kwargs)
++
++    # Always call these methods
++    self.modifyMastersWithMultipleInstances()
++    self.modifyCardinalitiesDict()
++    self.modifyHeapSizeProperties()
++    self.modifyNotValuableComponents()
++    self.modifyComponentsNotPreferableOnServer()
++    self.modifyComponentLayoutSchemes()
++
++  def modifyMastersWithMultipleInstances(self):
++    """
++    Modify the set of masters with multiple instances.
++    Must be overriden in child class.
++    """
++    # Nothing to do
++    pass
++
++  def modifyCardinalitiesDict(self):
++    """
++    Modify the dictionary of cardinalities.
++    Must be overriden in child class.
++    """
++    # Nothing to do
++    pass
++
++  def modifyHeapSizeProperties(self):
++    """
++    Modify the dictionary of heap size properties.
++    Must be overriden in child class.
++    """
++    pass
++
++  def modifyNotValuableComponents(self):
++    """
++    Modify the set of components whose host assignment is based on other services.
++    Must be overriden in child class.
++    """
++    # Nothing to do
++    pass
++
++  def modifyComponentsNotPreferableOnServer(self):
++    """
++    Modify the set of components that are not preferable on the server.
++    Must be overriden in child class.
++    """
++    # Nothing to do
++    pass
++
++  def modifyComponentLayoutSchemes(self):
++    """
++    Modify layout scheme dictionaries for components.
++    The scheme dictionary basically maps the number of hosts to
++    host index where component should exist.
++    Must be overriden in child class.
++    """
++
++   # Nothing to do
++    pass
++
++
++  def getServiceComponentLayoutValidations(self, services, hosts):
++    """
++    Get a list of errors.
++    Must be overriden in child class.
++    """
++
++    return self.getServiceComponentCardinalityValidations(services, hosts, "DORIS")
++
++  def getServiceConfigurationRecommendations(self, configurations, clusterData, services, hosts):
++    """
++    Entry point.
++    Must be overriden in child class.
++    """
++    # Logger.info("Class: %s, Method: %s. Recommending Service Configurations." %
++    #            (self.__class__.__name__, inspect.stack()[0][3]))
++
++    recommender = DorisRecommender()
++    recommender.recommendDorisConfigurationsFromHDP32(configurations, clusterData, services, hosts)
++
++
++  # def getServiceConfigurationRecommendationsForSSO(self, configurations, clusterData, services, hosts):
++  #   """
++  #   Entry point.
++  #   Must be overriden in child class.
++  #   """
++  #   recommender = DorisRecommender()
++  #   recommender.recommendConfigurationsForSSO(configurations, clusterData, services, hosts)
++
++  def getServiceConfigurationsValidationItems(self, configurations, recommendedDefaults, services, hosts):
++    """
++    Entry point.
++    Validate configurations for the service. Return a list of errors.
++    The code for this function should be the same for each Service Advisor.
++    """
++    # Logger.info("Class: %s, Method: %s. Validating Configurations." %
++    #            (self.__class__.__name__, inspect.stack()[0][3]))
++
++    validator = DorisValidator()
++    # Calls the methods of the validator using arguments,
++    # method(siteProperties, siteRecommendations, configurations, services, hosts)
++    return validator.validateListOfConfigUsingMethod(configurations, recommendedDefaults, services, hosts, validator.validators)
++
++
++  @staticmethod
++  def isKerberosEnabled(services, configurations):
++    """
++    Determines if security is enabled by testing the value of core-site/hadoop.security.authentication enabled.
++    If the property exists and is equal to "kerberos", then is it enabled; otherwise is it assumed to be
++    disabled.
++
++    :type services: dict
++    :param services: the dictionary containing the existing configuration values
++    :type configurations: dict
++    :param configurations: the dictionary containing the updated configuration values
++    :rtype: bool
++    :return: True or False
++    """
++    if configurations and "core-site" in configurations and \
++            "hadoop.security.authentication" in configurations["core-site"]["properties"]:
++      return configurations["core-site"]["properties"]["hadoop.security.authentication"].lower() == "kerberos"
++    elif services and "core-site" in services["configurations"] and \
++            "hadoop.security.authentication" in services["configurations"]["core-site"]["properties"]:
++      return services["configurations"]["core-site"]["properties"]["hadoop.security.authentication"].lower() == "kerberos"
++    else:
++      return False
++
++
++class DorisRecommender(service_advisor.ServiceAdvisor):
++  """
++  Doris Recommender suggests properties when adding the service for the first time or modifying configs via the UI.
++  """
++
++  def __init__(self, *args, **kwargs):
++    self.as_super = super(DorisRecommender, self)
++    self.as_super.__init__(*args, **kwargs)
++
++  def recommendDorisConfigurationsFromHDP32(self, configurations, clusterData, services, hosts):
++    """
++    Recommend configurations for this service based on HDP 3.2.
++    """
++    putDorisRangerPluginProperty = self.putProperty(configurations, "ranger-doris-plugin-properties", services)      
++
++
++    # Recommend Ranger Hive authorization as per Ranger Hive plugin property
++    if "ranger-env" in services["configurations"] and "doris-env" in services["configurations"] and \
++        "ranger-doris-plugin-enabled" in services["configurations"]["ranger-env"]["properties"]:
++      rangerEnvDorisPluginProperty = services["configurations"]["ranger-env"]["properties"]["ranger-doris-plugin-enabled"]
++      putDorisRangerPluginProperty("ranger-doris-plugin-enabled", rangerEnvDorisPluginProperty)
++      # if (rangerEnvDorisPluginProperty.lower() == "yes"):
++      #   putDorisSiteProperty("doris.acl.enabled", "true")
++      #   putDorisSiteProperty("doris.acl.authorizer.class", 'org.apache.ranger.authorization.oris.authorizer.RangerDorisAuthorizer')
++      # else:
++      #   #putDorisSiteProperty("doris.acl.enabled", "false")
++      
++
++class DorisValidator(service_advisor.ServiceAdvisor):
++  """
++  Doris Validator checks the correctness of properties whenever the service is first added or the user attempts to
++  change configs via the UI.
++  """
++
++  def __init__(self, *args, **kwargs):
++    self.as_super = super(DorisValidator, self)
++    self.as_super.__init__(*args, **kwargs)
++
++    self.validators = [("ranger-doris-plugin-properties", self.validateDorisRangerPluginConfigurationsFromHDP33)]
++
++  def validateDorisRangerPluginConfigurationsFromHDP33(self, properties, recommendedDefaults, configurations, services, hosts):
++    validationItems = []
++    ranger_plugin_properties = self.getSiteProperties(configurations, "ranger-doris-plugin-properties")
++    ranger_plugin_enabled = ranger_plugin_properties['ranger-doris-plugin-enabled'] if ranger_plugin_properties else 'No'
++    servicesList = [service["StackServices"]["service_name"] for service in services["services"]]
++    if 'RANGER' in servicesList and ranger_plugin_enabled.lower() == 'yes':
++      ranger_env = self.getServicesSiteProperties(services, 'ranger-env')
++      if not ranger_env or not 'ranger-doris-plugin-enabled' in ranger_env or \
++                      ranger_env['ranger-doris-plugin-enabled'].lower() != 'yes':
++        validationItems.append({"config-name": 'ranger-doris-plugin-enabled',
++                                "item": self.getWarnItem(
++                                  "ranger-doris-plugin-properties/ranger-doris-plugin-enabled must correspond ranger-env/ranger-doris-plugin-enabled")})
++
++ 
++    return self.toConfigurationValidationProblems(validationItems, "ranger-doris-plugin-properties")
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/role_command_order.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/role_command_order.json b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/role_command_order.json
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/role_command_order.json	(date 1735472554000)
+@@ -0,0 +1,10 @@
++{
++  "general_deps" : {
++    "_comment" : "dependencies for DORIS",
++    "DORIS_SERVICE_CHECK-SERVICE_CHECK" : ["DORIS_FE-START","DORIS_BE-START"],
++	"DORIS_FE-START" : ["NODEMANAGER-START", "RANGER_USERSYNC-START"],
++    "DORIS_BE-START" : ["DORIS_FE-START"],
++    "DORIS_HDFS_BROKER-START" : ["DORIS_FE-START"],
++    "DORIS_FE_OBSERVER-START" : ["DORIS_FE-START"]
++  }
++}
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-fe-log4j-properties.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-fe-log4j-properties.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-fe-log4j-properties.xml
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-fe-log4j-properties.xml	(date 1735472554000)
+@@ -0,0 +1,47 @@
++<?xml version="1.0"?>
++<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
++<!--
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++-->
++<configuration supports_adding_forbidden="true">
++    <property>
++        <name>content</name>
++        <description>doris-fe-log4j-properties</description>
++        <value>
++log4j.rootLogger = debug,stdout,D
++
++log4j.appender.stdout = org.apache.log4j.ConsoleAppender
++log4j.appender.stdout.Target = System.out
++log4j.appender.stdout.layout = org.apache.log4j.PatternLayout
++log4j.appender.stdout.layout.ConversionPattern = [%-5p] %d{yyyy-MM-dd HH:mm:ss,SSS} method:%l%n%m%n
++
++log4j.appender.D = org.apache.log4j.DailyRollingFileAppender
++log4j.appender.D.File = {{fe_log_dir}}/ranger.log
++log4j.appender.D.Append = true
++log4j.appender.D.Threshold = INFO
++log4j.appender.D.layout = org.apache.log4j.PatternLayout
++log4j.appender.D.layout.ConversionPattern = %-d{yyyy-MM-dd HH:mm:ss}  [ %t:%r ] - [ %p ]  %m%n
++
++        </value>
++        <value-attributes>
++            <type>content</type>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++</configuration>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-policymgr-ssl.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-policymgr-ssl.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-policymgr-ssl.xml
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-policymgr-ssl.xml	(date 1735472554000)
+@@ -0,0 +1,72 @@
++<?xml version="1.0"?>
++<!--
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++-->
++<configuration>
++  <property>
++    <name>xasecure.policymgr.clientssl.keystore</name>
++    <value/>
++    <description>Java Keystore files</description>
++    <value-attributes>
++      <empty-value-valid>true</empty-value-valid>
++    </value-attributes>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>xasecure.policymgr.clientssl.keystore.password</name>
++    <value>myKeyFilePassword</value>
++    <property-type>PASSWORD</property-type>
++    <description>password for keystore</description>
++    <value-attributes>
++      <type>password</type>
++    </value-attributes>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>xasecure.policymgr.clientssl.truststore</name>
++    <value/>
++    <description>java truststore file</description>
++    <value-attributes>
++      <empty-value-valid>true</empty-value-valid>
++    </value-attributes>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>xasecure.policymgr.clientssl.truststore.password</name>
++    <value>changeit</value>
++    <property-type>PASSWORD</property-type>
++    <description>java truststore password</description>
++    <value-attributes>
++      <type>password</type>
++    </value-attributes>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>xasecure.policymgr.clientssl.keystore.credential.file</name>
++    <value>jceks://file{{credential_file}}</value>
++    <description>java keystore credential file</description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>xasecure.policymgr.clientssl.truststore.credential.file</name>
++    <value>jceks://file{{credential_file}}</value>
++    <description>java truststore credential file</description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++</configuration>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-plugin-properties.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-plugin-properties.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-plugin-properties.xml
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/ranger-doris-plugin-properties.xml	(date 1735472554000)
+@@ -0,0 +1,132 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<!--
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++-->
++<configuration supports_final="true">
++  <property>
++    <name>common.name.for.certificate</name>
++    <value/>
++    <description>Common name for certificate, this value should match what is specified in repo within ranger admin</description>
++    <value-attributes>
++      <empty-value-valid>true</empty-value-valid>
++    </value-attributes>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>policy_user</name>
++    <value>ambari-qa</value>
++    <display-name>Policy user for doris</display-name>
++    <depends-on>
++      <property>
++        <type>ranger-env</type>
++        <name>ranger_user</name>
++      </property>
++    </depends-on>
++    <description>This user must be system user and also present at Ranger admin portal</description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>ranger-doris-plugin-enabled</name>
++    <value>No</value>
++    <display-name>Enable Ranger for doris</display-name>
++    <description>Enable ranger doris plugin ?</description>
++    <value-attributes>
++      <type>boolean</type>
++      <overridable>false</overridable>
++    </value-attributes>
++    <depends-on>
++      <property>
++        <type>ranger-env</type>
++        <name>ranger-doris-plugin-enabled</name>
++      </property>
++    </depends-on>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>REPOSITORY_CONFIG_USERNAME</name>
++    <value>admin</value>
++    <display-name>Ranger repository config user</display-name>
++    <description>Used for repository creation on ranger admin</description>
++    <depends-on>
++      <property>
++        <type>ranger-doris-plugin-properties</type>
++        <name>ranger-doris-plugin-enabled</name>
++      </property>
++    </depends-on>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>REPOSITORY_CONFIG_PASSWORD</name>
++    <value></value>
++    <display-name>Ranger repository config password</display-name>
++    <property-type>PASSWORD</property-type>
++    <description>Used for repository creation on ranger admin</description>
++    <value-attributes>
++      <type>password</type>
++      <empty-value-valid>true</empty-value-valid>
++    </value-attributes>
++    <on-ambari-upgrade add="false"/>
++  </property>
++
++  <!-- Inherited from HBase in HDP 2.6 -->
++  <property>
++    <name>external_admin_username</name>
++    <value></value>
++    <display-name>External Ranger admin username</display-name>
++    <description>Add ranger default admin username if want to communicate to external ranger</description>
++    <value-attributes>
++      <empty-value-valid>true</empty-value-valid>
++    </value-attributes>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>external_admin_password</name>
++    <value></value>
++    <display-name>External Ranger admin password</display-name>
++    <property-type>PASSWORD</property-type>
++    <description>Add ranger default admin password if want to communicate to external ranger</description>
++    <value-attributes>
++      <type>password</type>
++      <empty-value-valid>true</empty-value-valid>
++    </value-attributes>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>external_ranger_admin_username</name>
++    <value></value>
++    <display-name>External Ranger Ambari admin username</display-name>
++    <description>Add ranger default ambari admin username if want to communicate to external ranger</description>
++    <value-attributes>
++      <empty-value-valid>true</empty-value-valid>
++    </value-attributes>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>external_ranger_admin_password</name>
++    <value></value>
++    <display-name>External Ranger Ambari admin password</display-name>
++    <property-type>PASSWORD</property-type>
++    <description>Add ranger default ambari admin password if want to communicate to external ranger</description>
++    <value-attributes>
++      <type>password</type>
++      <empty-value-valid>true</empty-value-valid>
++    </value-attributes>
++    <on-ambari-upgrade add="false"/>
++  </property>
++</configuration>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-hdfs-broker-log4j-properties.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-hdfs-broker-log4j-properties.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-hdfs-broker-log4j-properties.xml
+new file mode 100644
+--- /dev/null	(date 1735472554000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/DORIS/configuration/doris-hdfs-broker-log4j-properties.xml	(date 1735472554000)
+@@ -0,0 +1,65 @@
++<?xml version="1.0"?>
++<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
++<!--
++/**
++ * Licensed to the Apache Software Foundation (ASF) under one
++ * or more contributor license agreements.  See the NOTICE file
++ * distributed with this work for additional information
++ * regarding copyright ownership.  The ASF licenses this file
++ * to you under the Apache License, Version 2.0 (the
++ * "License"); you may not use this file except in compliance
++ * with the License.  You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++-->
++<configuration supports_adding_forbidden="true">
++    <property>
++        <name>content</name>
++        <description>doris-broker-log4j-properties</description>
++        <value>
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements.  See the NOTICE file
++# distributed with this work for additional information
++# regarding copyright ownership.  The ASF licenses this file
++# to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#   http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++
++log4j.rootLogger = debug,stdout,D
++
++log4j.appender.stdout = org.apache.log4j.ConsoleAppender
++log4j.appender.stdout.Target = System.out
++log4j.appender.stdout.layout = org.apache.log4j.PatternLayout
++log4j.appender.stdout.layout.ConversionPattern = [%-5p] %d{yyyy-MM-dd HH:mm:ss,SSS} method:%l%n%m%n
++
++log4j.appender.D = org.apache.log4j.DailyRollingFileAppender
++#log4j.appender.D.File = ${BROKER_LOG_DIR}/apache_hdfs_broker.log
++log4j.appender.D.File = {{broker_log_dir}}/apache_hdfs_broker.log
++log4j.appender.D.Append = true
++log4j.appender.D.Threshold = INFO
++log4j.appender.D.layout = org.apache.log4j.PatternLayout
++log4j.appender.D.layout.ConversionPattern = %-d{yyyy-MM-dd HH:mm:ss}  [ %t:%r ] - [ %p ]  %m%n
++
++        </value>
++        <value-attributes>
++            <type>content</type>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++</configuration>

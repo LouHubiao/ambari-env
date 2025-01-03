@@ -1,0 +1,87 @@
+Subject: [PATCH] feature: 支持 doris 2.1.7 编译
+---
+Index: bigtop.bom
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/bigtop.bom b/bigtop.bom
+--- a/bigtop.bom	(revision 8b6875333c881bf72c4a141af18015f1bc33026c)
++++ b/bigtop.bom	(date 1735798965887)
+@@ -94,6 +94,7 @@
+ bigtop {
+ /** Base Configuration of the mirror and archives */
+     base_version = "3.2.0"
++    gh_proxy = "https://ghgo.xyz/"
+     version = base_version + "-SNAPSHOT"
+     stack {
+         'jdk' { version = "1." + (System.getenv('BIGTOP_JDK') ?: "8"); version_base = version }
+@@ -353,7 +354,7 @@
+                 source = "v${version.base}.tar.gz"
+             }
+             url {
+-                site = "https://ghgo.xyz/https://github.com/Alluxio/alluxio/archive"
++                site = bigtop.gh_proxy + "https://github.com/Alluxio/alluxio/archive"
+                 archive = site
+             }
+         }
+@@ -383,7 +384,7 @@
+                 source = "${version.base}.tar.gz"
+             }
+             url {
+-                site = "https://ghgo.xyz/https://github.com/brianfrankcooper/YCSB/archive"
++                site = bigtop.gh_proxy + "https://github.com/brianfrankcooper/YCSB/archive"
+                 archive = site
+             }
+         }
+@@ -413,7 +414,7 @@
+                 source = "${version.base}.tar.gz"
+             }
+             url {
+-                site = "https://ghgo.xyz/https://github.com/greenplum-db/gpdb/archive/"
++                site = bigtop.gh_proxy + "https://github.com/greenplum-db/gpdb/archive/"
+                 archive = site
+             }
+         }
+@@ -472,7 +473,7 @@
+                 source = destination
+             }
+             url {
+-                site = "https://ghgo.xyz/https://github.com/apache/ranger/archive/refs/tags"
++                site = bigtop.gh_proxy + "https://github.com/apache/ranger/archive/refs/tags"
+                 archive = site
+             }
+             maven_parallel_build = true
+@@ -504,7 +505,7 @@
+                 source = destination
+             }
+             url {
+-                site = "https://ghgo.xyz/https://github.com/redis/redis/archive/refs/tags/"
++                site = bigtop.gh_proxy + "https://github.com/redis/redis/archive/refs/tags/"
+                 archive = site
+             }
+         }
+@@ -519,7 +520,22 @@
+                 source = "${version.base}.tar.gz"
+             }
+             url {
+-                site = "https://ghgo.xyz/https://github.com/apache/dolphinscheduler/archive/refs/tags"
++                site = bigtop.gh_proxy + "https://github.com/apache/dolphinscheduler/archive/refs/tags"
++                archive = site
++            }
++        }
++
++        'doris' {
++            name = 'doris'
++            rpm_pkg_suffix = "_" + bigtop.base_version.replace(".", "_")
++            relNotes = 'Doris v2.1.7 Stable Release'
++            version { base = '2.1.7'; pkg = base; release = 1 }
++            tarball {
++                destination = "${name}-${version.base}.tar.gz"
++                source = "${version.base}-rc03.tar.gz"
++            }
++            url {
++                site = bigtop.gh_proxy + "https://github.com/apache/doris/archive/refs/tags"
+                 archive = site
+             }
+         }

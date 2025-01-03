@@ -33,6 +33,11 @@ packages=(
   cyrus-*
   devtoolset-7-gcc
   devtoolset-7-gcc-c++.x86_64
+  devtoolset-10-gcc
+  devtoolset-10-gcc-c++
+  devtoolset-11-gcc
+  devtoolset-11-gcc-c++
+  llvm-toolset-7.0*
   flex
   freetype-devel
   fribidi-devel

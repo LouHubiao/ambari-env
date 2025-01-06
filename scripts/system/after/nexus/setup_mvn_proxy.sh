@@ -38,7 +38,10 @@ REPOS=(
   "cloudera-libs|https://repository.cloudera.com/repository/libs-release-local/"
   "datanucleus|https://www.datanucleus.org/downloads/maven2/"
   "aliyun-spring-plugin|https://maven.aliyun.com/repository/spring-plugin"
+  "aliyun-spring|https://maven.aliyun.com/repository/spring"
+  "aliyun-central|https://maven.aliyun.com/repository/spring"
   "huawei|https://repo.huaweicloud.com/repository/maven"
+  "huaweicloudsdk|https://repo.huaweicloud.com/repository/maven/huaweicloudsdk"
 )
 
 # Function to check if a repository exists

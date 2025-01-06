@@ -21,10 +21,17 @@ set -ex
 echo "############## INSTALL R start #############"
 
 # 定义变量
+DOWNLOAD_DIR="/opt/modules"      # 下载路径
 URL="https://mirrors.ustc.edu.cn/CRAN/src/base/R-4/R-4.4.1.tar.gz"
-TAR_FILE="R-4.4.1.tar.gz"
-DIR_NAME="R-4.4.1"
-INSTALL_DIR="/usr/local/R-4.4.1"
+TAR_FILE="${DOWNLOAD_DIR}/R-4.4.1.tar.gz" # 下载的完整路径
+DIR_NAME="${DOWNLOAD_DIR}/R-4.4.1"        # 解压后的目录
+INSTALL_DIR="/usr/local/R-4.4.1"          # 安装路径
+
+# 创建下载目录（如果不存在）
+if [ ! -d "$DOWNLOAD_DIR" ]; then
+    sudo mkdir -p "$DOWNLOAD_DIR"
+    sudo chown $(whoami):$(whoami) "$DOWNLOAD_DIR"
+fi
 
 # 检查R是否已经安装
 if [ ! -d "$INSTALL_DIR" ]; then
@@ -61,7 +68,7 @@ if [ ! -d "$INSTALL_DIR" ]; then
 
   # 解压文件，如果目录不存在
   if [ ! -d "$DIR_NAME" ]; then
-    tar -zxvf $TAR_FILE
+    tar -zxvf $TAR_FILE -C $DOWNLOAD_DIR
   else
     echo "$DIR_NAME 已存在，跳过解压缩。"
   fi
@@ -74,10 +81,9 @@ if [ ! -d "$INSTALL_DIR" ]; then
   make
   sudo make install
 
-  # 清理下载的文件
+  # 清理解压的文件（可选）
   cd ..
   rm -rf $DIR_NAME
-  rm $TAR_FILE
 else
   echo "R 已安装在 $INSTALL_DIR，跳过编译。"
 fi

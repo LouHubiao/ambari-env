@@ -81,8 +81,6 @@ ALL_COMPONENTS=(
   # 1.0.3 版本新增
   phoenix-rpm
   dolphinscheduler-rpm
-  # 1.0.4 版本新增
-  doris-rpm
 )
 
 # 编译所有组件

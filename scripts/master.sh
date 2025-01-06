@@ -48,9 +48,6 @@ source /scripts/system/init/setup_virtual_env.sh
 #处理r环境
 source /scripts/system/init/setup_r_env.sh
 
-#处理 flex 环境
-source /scripts/system/init/setup_flex_env.sh
-
 # 将本机ip写入到
 source /scripts/util/write_ip.sh
 

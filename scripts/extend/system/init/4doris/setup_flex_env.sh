@@ -1,18 +1,24 @@
 #!/bin/bash
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements. See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License. You may obtain a copy of the License at
+# 版权所有 (c) JaneTTR 2025
+# 项目名称：ambari-env
 #
-#     http://www.apache.org/licenses/LICENSE-2.0
+# 本文件属于付费部分代码，仅供个人学习和研究使用。
 #
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# 禁止行为：
+# 1. 未经授权，不得将本文件或其编译后的代码用于任何商业用途；
+# 2. 禁止重新分发本文件或其修改版本；
+# 3. 禁止通过反编译、反向工程等手段试图绕过授权验证。
+#
+# 商业授权：
+# 如需将本文件或其编译后的代码用于商业用途，必须获得版权所有者的书面授权。
+# 联系方式：
+# 邮箱：3832514048@qq.com
+#
+# 责任声明：
+# 本文件按“现状”提供，不附带任何形式的担保，包括但不限于适销性、特定用途适用性或无侵权的担保。
+#
+# 如有任何疑问，请联系版权所有者。
+
 
 set -ex
 

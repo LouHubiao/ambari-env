@@ -22,10 +22,10 @@ echo "############## INSTALL R start #############"
 
 # 定义变量
 DOWNLOAD_DIR="/opt/modules"      # 下载路径
-URL="https://mirrors.ustc.edu.cn/CRAN/src/base/R-4/R-4.4.1.tar.gz"
-TAR_FILE="${DOWNLOAD_DIR}/R-4.4.1.tar.gz" # 下载的完整路径
-DIR_NAME="${DOWNLOAD_DIR}/R-4.4.1"        # 解压后的目录
-INSTALL_DIR="/usr/local/R-4.4.1"          # 安装路径
+URL="https://mirrors.tuna.tsinghua.edu.cn/CRAN/src/base/R-4/R-4.4.2.tar.gz"
+TAR_FILE="${DOWNLOAD_DIR}/R-4.4.2.tar.gz" # 下载的完整路径
+DIR_NAME="${DOWNLOAD_DIR}/R-4.4.2"        # 解压后的目录
+INSTALL_DIR="/usr/local/R-4.4.2"          # 安装路径
 
 # 创建下载目录（如果不存在）
 if [ ! -d "$DOWNLOAD_DIR" ]; then
@@ -61,7 +61,7 @@ if [ ! -d "$INSTALL_DIR" ]; then
 
   # 下载tar.gz文件，如果文件不存在
   if [ ! -f "$TAR_FILE" ]; then
-    wget $URL -O $TAR_FILE
+    curl -o $TAR_FILE $URL
   else
     echo "$TAR_FILE 已存在，跳过下载。"
   fi

@@ -28,6 +28,7 @@ echo "############## PRE BUILD AMBARI1_0_4 start #############"
 patch_files=(
   "/scripts/build/ambari/patch1_0_4/patch0-THEME-MISSING-FIXED.dff"
   "/scripts/build/ambari/patch1_0_4/patch1-DORIS-COMPONENT-ADD.diff"
+  "/scripts/build/ambari/patch1_0_4/patch2-IGNORE-SCRIPT-4NODE.diff"
 )
 PROJECT_PATH="/opt/modules/ambari"
 RPM_PACKAGE="/data/rpm-package/ambari"

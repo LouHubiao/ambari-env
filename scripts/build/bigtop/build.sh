@@ -20,10 +20,7 @@ set -ex
 
 echo "############## PRE BUILD BIGTOP start #############"
 
-export NEXUS_URL=$(cat /scripts/system/before/nexus/.lock)
-export NEXUS_USERNAME="admin"
-export NEXUS_PASSWORD="admin123"
-echo $NEXUS_URL
+
 
 
 #########################

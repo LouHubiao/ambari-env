@@ -22,6 +22,10 @@ set -e
 
 echo "############## ONE_KEY_BUILD start #############"
 
+export NEXUS_URL=$(cat /scripts/system/before/nexus/.lock)
+export NEXUS_USERNAME="admin"
+export NEXUS_PASSWORD="admin123"
+echo $NEXUS_URL
 
 PROJECT_PATH="/opt/modules/bigtop"
 RPM_PACKAGE="/data/rpm-package/bigtop"

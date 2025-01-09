@@ -20,10 +20,7 @@ set -e
 
 echo "############## PRE BUILD BIGTOP_1_0_1 start #############"
 
-export NEXUS_URL=$(cat /scripts/system/before/nexus/.lock)
-export NEXUS_USERNAME="admin"
-export NEXUS_PASSWORD="admin123"
-echo $NEXUS_URL
+
 
 PROJECT_PATH="/opt/modules/bigtop"
 

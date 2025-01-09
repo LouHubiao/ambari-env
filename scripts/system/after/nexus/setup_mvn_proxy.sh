@@ -39,7 +39,7 @@ REPOS=(
   "datanucleus|https://www.datanucleus.org/downloads/maven2/"
   "aliyun-spring-plugin|https://maven.aliyun.com/repository/spring-plugin"
   "aliyun-spring|https://maven.aliyun.com/repository/spring"
-  "aliyun-central|https://maven.aliyun.com/repository/spring"
+  "aliyun-central|https://maven.aliyun.com/repository/central"
   "huawei|https://repo.huaweicloud.com/repository/maven"
   "huaweicloudsdk|https://repo.huaweicloud.com/repository/maven/huaweicloudsdk"
 )

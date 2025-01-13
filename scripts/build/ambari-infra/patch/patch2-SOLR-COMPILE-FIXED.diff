@@ -1,0 +1,21 @@
+Subject: [PATCH] fixed: 修复解决 package org.apache.commons.io does not exist
+---
+Index: ambari-infra-solr-client/pom.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-infra-solr-client/pom.xml b/ambari-infra-solr-client/pom.xml
+--- a/ambari-infra-solr-client/pom.xml	(revision 001165b119a6e805ea4637f1bde2413c49a32e86)
++++ b/ambari-infra-solr-client/pom.xml	(date 1727602997307)
+@@ -70,6 +70,10 @@
+       <version>1.8</version>
+     </dependency>
+     <dependency>
++      <groupId>commons-io</groupId>
++      <artifactId>commons-io</artifactId>
++    </dependency>
++    <dependency>
+       <groupId>commons-lang</groupId>
+       <artifactId>commons-lang</artifactId>
+     </dependency>

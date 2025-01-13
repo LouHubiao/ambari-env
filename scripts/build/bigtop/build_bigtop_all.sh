@@ -33,25 +33,23 @@ mkdir -p "$RPM_PACKAGE"
 
 
 
-echo "1.0.0 版本编译开始"
+echo "1.0.0 补丁"
 bash /scripts/build/bigtop/build.sh
-echo "1.0.0 版本结束"
 
-echo "1.0.1 版本编译开始"
+echo "1.0.1 补丁"
 bash /scripts/build/bigtop/build1_0_1.sh
-echo "1.0.1 版本编译结束"
 
-echo "1.0.2 版本编译开始"
+echo "1.0.2 补丁"
 bash /scripts/build/bigtop/build1_0_2.sh
-echo "1.0.2 版本编译结束"
 
-echo "1.0.3 版本编译开始"
+echo "1.0.3 补丁"
 bash /scripts/build/bigtop/build1_0_3.sh
-echo "1.0.3 版本编译结束"
 
-echo "1.0.4 版本编译开始"
+echo "1.0.4 补丁"
 bash /scripts/build/bigtop/build1_0_4.sh
-echo "1.0.4 版本编译结束"
+
+echo "1.0.5 补丁"
+bash /scripts/build/bigtop/build1_0_5.sh
 
 
 # 开启 gcc 高版本
@@ -85,6 +83,10 @@ ALL_COMPONENTS=(
   # 1.0.3 版本新增
   phoenix-rpm
   dolphinscheduler-rpm
+  # 1.0.4 版本新增
+  doris-download
+  # 1.0.5 版本新增
+  nightingale-download
 )
 
 # 编译所有组件

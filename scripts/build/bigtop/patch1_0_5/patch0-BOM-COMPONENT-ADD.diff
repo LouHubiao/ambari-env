@@ -1,0 +1,31 @@
+Subject: [PATCH] optimized: 增加 nightingale 7.7.2 版本
+---
+Index: bigtop.bom
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/bigtop.bom b/bigtop.bom
+--- a/bigtop.bom	(revision 6d495081201e156c8a253a4375a203791beacbe4)
++++ b/bigtop.bom	(date 1736753305104)
+@@ -539,5 +539,20 @@
+                 archive = site
+             }
+         }
++
++        'nightingale' {
++            name = 'nightingale'
++            rpm_pkg_suffix = "_" + bigtop.base_version.replace(".", "_")
++            relNotes = 'Nightingale v7.7.2'
++            version { base = '7.7.2'; pkg = base; release = 1 }
++            tarball {
++                source = "n9e-v${version.base}-linux-amd64.tar.gz"
++                destination = source
++            }
++            url {
++                site = bigtop.gh_proxy + "https://github.com/ccfos/nightingale/releases/download/v${version.base}"
++                archive = site
++            }
++        }
+     }
+ }

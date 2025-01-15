@@ -87,6 +87,7 @@ ALL_COMPONENTS=(
   doris-download
   # 1.0.5 版本新增
   nightingale-download
+  categraf-download
 )
 
 # 编译所有组件

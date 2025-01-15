@@ -1,4 +1,5 @@
-Subject: [PATCH] optimized: 增加 nightingale 7.7.2 版本
+Subject: [PATCH] feature: 尝试支持categraf
+feature: 尝试支持 nightingale
 ---
 Index: bigtop.bom
 IDEA additional info:
@@ -7,8 +8,8 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 ===================================================================
 diff --git a/bigtop.bom b/bigtop.bom
 --- a/bigtop.bom	(revision 6d495081201e156c8a253a4375a203791beacbe4)
-+++ b/bigtop.bom	(date 1736753305104)
-@@ -539,5 +539,20 @@
++++ b/bigtop.bom	(revision 5789ef433ad932f250c8d8c4cf0038d466b8c7e8)
+@@ -539,5 +539,35 @@
                  archive = site
              }
          }
@@ -24,6 +25,21 @@ diff --git a/bigtop.bom b/bigtop.bom
 +            }
 +            url {
 +                site = bigtop.gh_proxy + "https://github.com/ccfos/nightingale/releases/download/v${version.base}"
++                archive = site
++            }
++        }
++
++        'categraf' {
++            name = 'categraf'
++            rpm_pkg_suffix = "_" + bigtop.base_version.replace(".", "_")
++            relNotes = 'Categraf v0.4.1'
++            version { base = '0.4.1'; pkg = base; release = 1 }
++            tarball {
++                source = "categraf-v${version.base}-linux-amd64.tar.gz"
++                destination = source
++            }
++            url {
++                site = bigtop.gh_proxy + "https://github.com/flashcatcloud/categraf/releases/download/v${version.base}"
 +                archive = site
 +            }
 +        }

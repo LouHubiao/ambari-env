@@ -1,0 +1,497 @@
+Subject: [PATCH] feature： 支持 victoria metrics
+---
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/victoriametrics.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/victoriametrics.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/victoriametrics.py
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/victoriametrics.py	(date 1735023255000)
+@@ -0,0 +1,130 @@
++from resource_management import Script
++from resource_management.core.logger import Logger
++from resource_management.core.resources.system import Directory, Execute, File
++from resource_management.libraries.functions.format import format
++from resource_management.libraries.functions.check_process_status import (
++    check_process_status,
++)
++from resource_management.libraries.functions.get_user_call_output import (
++    get_user_call_output,
++)
++
++
++class Victoriametrics(Script):
++    def install(self, env):
++        import params
++
++        self.install_packages(env)
++
++    def configure(self, env):
++        import params
++        import status_params
++
++        env.set_params(params)
++        Directory(
++            [
++                status_params.victoriametrics_pid_dir,
++                params.victoriametrics_log_dir,
++                params.victoriametrics_data_dir,
++            ],
++            owner=params.victoriametrics_user,
++            create_parents=True,
++            group=params.victoriametrics_group,
++        )
++
++    def start(self, env):
++        import params
++        import status_params
++
++        env.set_params(params)
++        self.configure(env)
++        Directory(
++            [
++                status_params.victoriametrics_pid_dir,
++                params.victoriametrics_log_dir,
++                params.victoriametrics_data_dir,
++            ],
++            owner=params.victoriametrics_user,
++            create_parents=True,
++            group=params.victoriametrics_group,
++        )
++
++        Logger.info(
++            "Executing victoriametrics  start, component dir is:"
++            + params.victoriametrics_component_directory
++        )
++        victoriametrics_path = params.victoriametrics_home_dir
++        cmd = "nohup {victoriametrics_path}/bin/victoria-metrics  -storageDataPath={params.victoriametrics_data_dir} -httpListenAddr=0.0.0.0:{params.victoriametrics_port} -retentionPeriod={params.victoriametrics_retention_period}"
++
++        if (
++            len(params.victoriametrics_http_password) > 0
++            and len(params.victoriametrics_http_user) > 0
++        ):
++            cmd = (
++                cmd
++                + " -httpAuth.username={params.victoriametrics_http_user}  -httpAuth.password={params.victoriametrics_http_password}"
++            )
++        cmd = (
++            cmd
++            + "  &> {victoriametrics_log_dir}/server.log & echo $! > {status_params.victoriametrics_pid_file}"
++        )
++        Execute(format(cmd), user=params.victoriametrics_user)
++
++    def stop(self, env):
++        import params
++        import status_params
++
++        env.set_params(params)
++        kill_process(
++            status_params.victoriametrics_pid_file, params.victoriametrics_user
++        )
++
++    def restart(self, env):
++        self.stop(env)
++        self.start(env)
++
++    def status(self, env):
++        import status_params
++
++        env.set_params(status_params)
++        check_process_status(status_params.victoriametrics_pid_file)
++
++
++def kill_process(pid_file, user, wait_time=5):
++    import status_params
++
++    """
++    Kill the process by pid file, then check the process is running or not. If the process is still running after the kill
++    command, it will try to kill with -9 option (hard kill)
++    """
++    pid = get_user_call_output(
++        format("cat {pid_file}"), user=user, is_checked_call=False
++    )[1]
++    process_id_exists_command = format(
++        "ls {pid_file} >/dev/null 2>&1 && ps -p {pid} >/dev/null 2>&1"
++    )
++
++    kill_cmd = format("kill {pid}")
++    Execute(kill_cmd, not_if=format("! ({process_id_exists_command})"), user=user)
++
++    hard_kill_cmd = format("kill -9 {pid}")
++    Execute(
++        hard_kill_cmd,
++        not_if=format(
++            "! ({process_id_exists_command}) || ( sleep {wait_time} && ! ({process_id_exists_command}) )"
++        ),
++        ignore_failures=True,
++        user=user,
++    )
++    try:
++        Execute(
++            format("! ({process_id_exists_command})"), tries=20, try_sleep=3, user=user
++        )
++    except:
++        raise
++
++    File(pid_file, action="delete")
++
++
++if __name__ == "__main__":
++    Victoriametrics().execute()
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/status_params.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/status_params.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/status_params.py
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/status_params.py	(date 1735023255000)
+@@ -0,0 +1,33 @@
++#!/usr/bin/env python
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++
++from resource_management.libraries.script.script import Script
++from resource_management.libraries.functions import format
++
++config = Script.get_config()
++
++# kafka_pid_dir = config['configurations']['kafka-env']['kafka_pid_dir']
++# kafka_pid_file = format("{kafka_pid_dir}/kafka.pid")
++
++
++victoriametrics_pid_dir = config["configurations"]["victoriametrics-env"][
++    "victoriametrics_pid_dir"
++]
++victoriametrics_pid_file = format("{victoriametrics_pid_dir}/victoriametrics.pid")
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/params.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/params.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/params.py
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/params.py	(date 1735023255000)
+@@ -0,0 +1,42 @@
++from resource_management import *
++from resource_management.libraries.script.script import Script
++from resource_management.libraries.functions import format
++
++# server configurations
++config = Script.get_config()
++stack_root = Script.get_stack_root()
++
++SERVER_ROLE_DIRECTORY_MAP = {"VICTORIAMETRICS": "victoriametrics"}
++
++
++victoriametrics_user = "victoriametrics"
++victoriametrics_group = "hadoop"
++
++# Either HIVE_METASTORE, HIVE_SERVER, WEBHCAT_SERVER, HIVE_CLIENT, HCAT, HIVE_SERVER_INTERACTIVE
++victoriametrics_component_directory = Script.get_component_from_role(
++    SERVER_ROLE_DIRECTORY_MAP, "VICTORIAMETRICS"
++)
++
++
++victoriametrics_home_dir = format(
++    "{stack_root}/current/{victoriametrics_component_directory}"
++)
++
++# victoriametrics config
++victoriametrics_data_dir = config["configurations"]["victoriametrics"]["data_dir"]
++victoriametrics_port = config["configurations"]["victoriametrics"]["port"]
++victoriametrics_retention_period = config["configurations"]["victoriametrics"][
++    "retention_period"
++]
++victoriametrics_http_user = config["configurations"]["victoriametrics"][
++    "http_user_name"
++]
++victoriametrics_http_password = config["configurations"]["victoriametrics"][
++    "http_user_password"
++]
++victoriametrics_log_dir = "/var/log/victoriametrics"
++
++victoriametrics_server_host = config["clusterHostInfo"]["victoriametrics_server_hosts"][
++    0
++]
++victoriametrics_test_cmd = f"curl -u {victoriametrics_http_user}:{victoriametrics_http_password} http://{victoriametrics_server_host}:{victoriametrics_port}/api/v1/status/top_queries"
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/service_check.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/service_check.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/service_check.py
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/service_check.py	(date 1735023255000)
+@@ -0,0 +1,42 @@
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agree in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++"""
++
++from resource_management.core import shell
++from resource_management.core.exceptions import Fail
++from resource_management.libraries.script.script import Script
++
++
++CHECK_COMMAND_TIMEOUT_DEFAULT = 300.0
++
++
++class VictoriametricsServiceCheck(Script):
++    def service_check(self, env):
++        import params
++
++        env.set_params(params)
++
++        # check Victoriametrics service
++        ret, out = shell.call(
++            params.victoriametrics_test_cmd, user=params.victoriametrics_user
++        )
++        if ret != 0 or len(out.strip()) <= 0:
++            raise Fail("Victoriametrics service check failed")
++
++
++if __name__ == "__main__":
++    VictoriametricsServiceCheck().execute()
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/configuration/victoriametrics.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/configuration/victoriametrics.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/configuration/victoriametrics.xml
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/configuration/victoriametrics.xml	(date 1735023255000)
+@@ -0,0 +1,40 @@
++<?xml version="1.0"?>
++<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
++
++<configuration supports_adding_forbidden="true">
++    <property >
++        <name>port</name>
++        <value>8428</value>
++        <description>victoriametrics server port </description>
++    </property>
++
++    <property require-input="true">
++        <name>data_dir</name>
++        <value>/data1/victoriametrics_data</value>
++        <description> data storage path of victoriametrics.</description>
++    </property>
++
++    <property>
++        <name>retention_period</name>
++        <value>12</value>
++        <description> data retention period  of victoriametrics month</description>
++    </property>
++
++    <property>
++        <name>http_user_name</name>
++        <value></value>
++        <description>http auth username for protecting all the HTTP endpoints with HTTP Basic Authentication</description>
++    </property>
++
++    <property>
++        <name>http_user_password</name>
++        <value></value>
++        <property-type>PASSWORD</property-type>
++        <value-attributes>
++            <type>password</type>
++            <overridable>false</overridable>
++            <hidden>CONFIG_DOWNLOAD</hidden>
++        </value-attributes>
++        <description>http password for protecting all the HTTP endpoints with HTTP Basic Authentication</description>
++    </property>
++</configuration>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/quicklinks/quicklinks.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/quicklinks/quicklinks.json b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/quicklinks/quicklinks.json
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/quicklinks/quicklinks.json	(date 1735023255000)
+@@ -0,0 +1,28 @@
++{
++  "name": "default",
++  "description": "default quick links configuration",
++  "configuration": {
++    "protocol":
++    {
++      "type":"HTTP_ONLY"
++    },
++
++    "links": [
++      {
++        "name": "victoriametrics_web_ui",
++        "label": "Victoriametrics Web UI",
++        "component_name": "VICTORIAMETRICS_SERVER",
++        "requires_user_name": "false",
++        "url": "%@://%@:%@",
++        "port":{
++          "http_property": "port",
++          "http_default_port": "8428",
++          "https_property": "port",
++          "https_default_port": "8428",
++          "regex": "^(\\d+)$",
++          "site": "victoriametrics"
++        }
++      }
++    ]
++  }
++}
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/configuration/victoriametrics-env.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/configuration/victoriametrics-env.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/configuration/victoriametrics-env.xml
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/configuration/victoriametrics-env.xml	(date 1735023255000)
+@@ -0,0 +1,16 @@
++<?xml version="1.0"?>
++<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
++
++<configuration supports_adding_forbidden="true">
++    <property>
++        <name>nightingale_server_pid_dir</name>
++        <value>/var/run/victoriametrics</value>
++        <description>victoriametrics server pid directory</description>
++    </property>
++
++    <property>
++        <name>victoriametrics_pid_dir</name>
++        <value>/var/run/victoriametrics/</value>
++        <description>victoriametrics pid directory</description>
++    </property>
++</configuration>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/metainfo.xml
+new file mode 100644
+--- /dev/null	(date 1737195861560)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/metainfo.xml	(date 1737195861560)
+@@ -0,0 +1,55 @@
++<?xml version="1.0"?>
++<metainfo>
++    <schemaVersion>2.0</schemaVersion>
++    <services>
++        <service>
++            <name>VICTORIAMETRICS</name>
++            <displayName>Victoriametrics</displayName>
++            <comment>Component VICTORIAMETRICS Integrated By JaneTTR . For commercial use, please contact mail: 3832514048@qq.com</comment>
++            <version>1.109.1</version>
++            <components>
++                <component>
++                    <name>VICTORIAMETRICS_SERVER</name>
++                    <displayName>Victoriametrics Server</displayName>
++                    <category>MASTER</category>
++                    <cardinality>1</cardinality>
++                    <!--<versionAdvertised>true</versionAdvertised>-->
++                    <commandScript>
++                        <script>scripts/victoriametrics.py</script>
++                        <scriptType>PYTHON</scriptType>
++                        <timeout>600</timeout>
++                    </commandScript>
++                    <configuration-dependencies>
++                        <config-type>victoriametrics</config-type>
++                    </configuration-dependencies>
++                </component>
++            </components>
++
++            <commandScript>
++                <script>scripts/service_check.py</script>
++                <scriptType>PYTHON</scriptType>
++                <timeout>300</timeout>
++            </commandScript>
++
++            <osSpecifics>
++                <osSpecific>
++                    <osFamily>any</osFamily>
++                    <packages>
++                        <package>
++                            <name>victoriametrics_${stack_version}</name>
++                        </package>
++                    </packages>
++                </osSpecific>
++            </osSpecifics>
++
++            <quickLinksConfigurations>
++                <quickLinksConfiguration>
++                    <fileName>quicklinks.json</fileName>
++                    <default>true</default>
++                </quickLinksConfiguration>
++            </quickLinksConfigurations>
++
++            <restartRequiredAfterChange>false</restartRequiredAfterChange>
++        </service>
++    </services>
++</metainfo>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/properties/stack_packages.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/properties/stack_packages.json b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/properties/stack_packages.json
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/properties/stack_packages.json	(revision 5340708f62b5451a4e36139e7bad3a6144741de0)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/properties/stack_packages.json	(date 1737192453582)
+@@ -658,6 +658,20 @@
+             "categraf"
+           ]
+         }
++      },
++      "VICTORIAMETRICS": {
++        "VICTORIAMETRICS_SERVER": {
++          "STACK-SELECT-PACKAGE": "victoriametrics",
++          "INSTALL": [
++            "victoriametrics"
++          ],
++          "PATCH": [
++            "victoriametrics"
++          ],
++          "STANDARD": [
++            "victoriametrics"
++          ]
++        }
+       }
+     },
+     "conf-select": {

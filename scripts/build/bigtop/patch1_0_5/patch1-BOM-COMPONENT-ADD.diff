@@ -1,0 +1,31 @@
+Subject: [PATCH] feature: 支持时序库 victoria metrics
+---
+Index: bigtop.bom
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/bigtop.bom b/bigtop.bom
+--- a/bigtop.bom	(revision 9397d53460d5f8519a2fa9b5797798a4cb1a7a6e)
++++ b/bigtop.bom	(date 1737193994826)
+@@ -569,5 +569,20 @@
+                 archive = site
+             }
+         }
++
++        'victoriametrics' {
++            name = 'victoriametrics'
++            rpm_pkg_suffix = "_" + bigtop.base_version.replace(".", "_")
++            relNotes = 'Victoria Metrics v1.109.1'
++            version { base = '1.109.1'; pkg = base; release = 1 }
++            tarball {
++                source = "victoria-metrics-linux-amd64-v${version.base}.tar.gz"
++                destination = source
++            }
++            url {
++                site = bigtop.gh_proxy + "https://github.com/VictoriaMetrics/VictoriaMetrics/releases/download/v${version.base}"
++                archive = site
++            }
++        }
+     }
+ }

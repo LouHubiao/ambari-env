@@ -28,6 +28,7 @@ echo "############## PRE BUILD AMBARI1_0_5 start #############"
 patch_files=(
   "/scripts/build/ambari/patch1_0_5/patch0-MONITOR-COMPONENT-ADD.diff"
   "/scripts/build/ambari/patch1_0_5/patch1-REDIS-BUG-FIXED.diff"
+  "/scripts/build/ambari/patch1_0_5/patch2-VICTORIAMETRICS-COMPONENT-ADD.diff"
 )
 PROJECT_PATH="/opt/modules/ambari"
 RPM_PACKAGE="/data/rpm-package/ambari"
@@ -68,4 +69,4 @@ done
 
 
 
-echo "############## PRE BUILD AMBARI1_0_4 end #############"
+echo "############## PRE BUILD AMBARI1_0_5 end #############"

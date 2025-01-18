@@ -88,6 +88,7 @@ ALL_COMPONENTS=(
   # 1.0.5 版本新增
   nightingale-download
   categraf-download
+  victoriametrics-download
 )
 
 # 编译所有组件

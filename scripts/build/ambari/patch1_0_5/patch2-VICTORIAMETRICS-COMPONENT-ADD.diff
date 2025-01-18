@@ -1,4 +1,4 @@
-Subject: [PATCH] feature： 支持 victoria metrics
+Subject: [PATCH] feature： 支持 victoriametrics
 ---
 Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/victoriametrics.py
 IDEA additional info:
@@ -190,8 +190,8 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 ===================================================================
 diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/params.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/params.py
 new file mode 100644
---- /dev/null	(date 1735023255000)
-+++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/params.py	(date 1735023255000)
+--- /dev/null	(date 1737197652573)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/params.py	(date 1737197652573)
 @@ -0,0 +1,42 @@
 +from resource_management import *
 +from resource_management.libraries.script.script import Script
@@ -234,7 +234,7 @@ new file mode 100644
 +victoriametrics_server_host = config["clusterHostInfo"]["victoriametrics_server_hosts"][
 +    0
 +]
-+victoriametrics_test_cmd = f"curl -u {victoriametrics_http_user}:{victoriametrics_http_password} http://{victoriametrics_server_host}:{victoriametrics_port}/api/v1/status/top_queries"
++victoriametrics_test_cmd = "curl -u {}:{} http://{}:{}/api/v1/status/top_queries".format(victoriametrics_http_user, victoriametrics_http_password, victoriametrics_server_host, victoriametrics_port)
 Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/VICTORIAMETRICS/package/scripts/service_check.py
 IDEA additional info:
 Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP

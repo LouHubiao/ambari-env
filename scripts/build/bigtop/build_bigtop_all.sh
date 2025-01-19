@@ -89,6 +89,7 @@ ALL_COMPONENTS=(
   nightingale-download
   categraf-download
   victoriametrics-download
+  cloudbeaver-download
 )
 
 # 编译所有组件

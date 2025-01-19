@@ -1,0 +1,31 @@
+Subject: [PATCH] 增加cloudbeaver 24.3.3
+---
+Index: bigtop.bom
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/bigtop.bom b/bigtop.bom
+--- a/bigtop.bom	(revision 0dabc5819e953cf64b3bc91f7df1ce766a3fb582)
++++ b/bigtop.bom	(date 1737279320221)
+@@ -584,5 +584,20 @@
+                 archive = site
+             }
+         }
++
++        'cloudbeaver' {
++            name = 'cloudbeaver'
++            rpm_pkg_suffix = "_" + bigtop.base_version.replace(".", "_")
++            relNotes = 'Cloudbeaver v24.3.3'
++            version { base = '24.3.3'; pkg = base; release = 1 }
++            tarball {
++                source = "cloudbeaver-v${version.base}.tar.gz"
++                destination = source
++            }
++            url {
++                site = "https://gitee.com/tt-bigdata/bigtop-cloudbeaver/archive/refs/tags"
++                archive = site
++            }
++        }
+     }
+ }

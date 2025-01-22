@@ -29,6 +29,7 @@ patch_files=(
   "/scripts/build/ambari/patch1_0_5/patch0-MONITOR-COMPONENT-ADD.diff"
   "/scripts/build/ambari/patch1_0_5/patch1-REDIS-BUG-FIXED.diff"
   "/scripts/build/ambari/patch1_0_5/patch2-VICTORIAMETRICS-COMPONENT-ADD.diff"
+  "/scripts/build/ambari/patch1_0_5/patch3-CLOUDBEAVER-COMPONENT-ADD.diff"
 )
 PROJECT_PATH="/opt/modules/ambari"
 RPM_PACKAGE="/data/rpm-package/ambari"

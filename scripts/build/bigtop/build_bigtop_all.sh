@@ -90,6 +90,7 @@ ALL_COMPONENTS=(
   categraf-download
   victoriametrics-download
   cloudbeaver-download
+  celeborn-download
 )
 
 # 编译所有组件

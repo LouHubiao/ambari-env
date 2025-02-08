@@ -32,6 +32,7 @@ patch_files=(
   "/scripts/build/ambari/patch1_0_5/patch3-CLOUDBEAVER-COMPONENT-ADD.diff"
   "/scripts/build/ambari/patch1_0_5/patch4-CATEGRAF-COMPONENT-OPTIMIZED.diff"
   "/scripts/build/ambari/patch1_0_5/patch5-CELEBORN-COMPONENT-ADD.diff"
+  "/scripts/build/ambari/patch1_0_5/patch6-VERSION-RULE-UPDATE.diff"
 )
 PROJECT_PATH="/opt/modules/ambari"
 RPM_PACKAGE="/data/rpm-package/ambari"

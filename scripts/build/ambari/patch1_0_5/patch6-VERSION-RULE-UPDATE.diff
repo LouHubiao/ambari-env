@@ -1,0 +1,206 @@
+Subject: [PATCH] optimized: 规范版本
+---
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/FLINK/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/FLINK/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/FLINK/metainfo.xml
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/FLINK/metainfo.xml	(revision 4cfc07e7a4425676fd98b90de8a08b78062d46c0)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/FLINK/metainfo.xml	(revision ea5b8a88deb574efd17aa14e5030b8522b9dc67c)
+@@ -22,7 +22,7 @@
+       <name>FLINK</name>
+       <displayName>Flink</displayName>
+       <comment>Flink is a framework and distributed processing engine for stateful computations over unbounded and bounded data streams</comment>
+-      <version>1.15.3-1</version>
++      <version>1.15.3</version>
+       <components>
+         <component>
+           <name>FLINK_HISTORYSERVER</name>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/HBASE/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/HBASE/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/HBASE/metainfo.xml
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/HBASE/metainfo.xml	(revision 4cfc07e7a4425676fd98b90de8a08b78062d46c0)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/HBASE/metainfo.xml	(revision ea5b8a88deb574efd17aa14e5030b8522b9dc67c)
+@@ -24,7 +24,7 @@
+       <comment>Non-relational distributed database and centralized service for configuration management &amp;
+         synchronization
+       </comment>
+-      <version>2.4.13-1</version>
++      <version>2.4.13</version>
+       <components>
+         <component>
+           <name>HBASE_MASTER</name>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/HDFS/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/HDFS/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/HDFS/metainfo.xml
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/HDFS/metainfo.xml	(revision 4cfc07e7a4425676fd98b90de8a08b78062d46c0)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/HDFS/metainfo.xml	(revision ea5b8a88deb574efd17aa14e5030b8522b9dc67c)
+@@ -23,7 +23,7 @@
+       <displayName>HDFS</displayName>
+       <serviceType>HDFS</serviceType> <!-- This tag is used only for main fileSystem service. It sets filesystem schema for ambari -->
+       <comment>Apache Hadoop Distributed File System</comment>
+-      <version>3.3.4-1</version>
++      <version>3.3.4</version>
+
+       <components>
+         <component>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/HIVE/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/HIVE/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/HIVE/metainfo.xml
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/HIVE/metainfo.xml	(revision 4cfc07e7a4425676fd98b90de8a08b78062d46c0)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/HIVE/metainfo.xml	(revision ea5b8a88deb574efd17aa14e5030b8522b9dc67c)
+@@ -24,7 +24,7 @@
+       <comment>Data warehouse system for ad-hoc queries &amp; analysis of large datasets and table &amp; storage
+             management service
+           </comment>
+-      <version>3.1.3-1</version>
++      <version>3.1.3</version>
+       <credential-store>
+         <supported>true</supported>
+         <enabled>true</enabled>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/KAFKA/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/KAFKA/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/KAFKA/metainfo.xml
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/KAFKA/metainfo.xml	(revision 4cfc07e7a4425676fd98b90de8a08b78062d46c0)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/KAFKA/metainfo.xml	(revision ea5b8a88deb574efd17aa14e5030b8522b9dc67c)
+@@ -22,7 +22,7 @@
+             <name>KAFKA</name>
+             <displayName>Kafka</displayName>
+             <comment>A high-throughput distributed messaging system</comment>
+-            <version>1.0.0.3.0</version>
++            <version>2.8.1</version>
+             <components>
+                 <component>
+                     <name>KAFKA_BROKER</name>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/NIGHTINGALE/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/NIGHTINGALE/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/NIGHTINGALE/metainfo.xml
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/NIGHTINGALE/metainfo.xml	(revision 4cfc07e7a4425676fd98b90de8a08b78062d46c0)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/NIGHTINGALE/metainfo.xml	(revision ea5b8a88deb574efd17aa14e5030b8522b9dc67c)
+@@ -25,7 +25,7 @@
+             <comment>Component NIGHTINGALE Integrated By JaneTTR . For commercial use, please contact mail:
+                 3832514048@qq.com
+             </comment>
+-            <version>7.3.4</version>
++            <version>7.7.2</version>
+             <components>
+                 <component>
+                     <name>NIGHTINGALE_SERVER</name>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/SOLR/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/SOLR/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/SOLR/metainfo.xml
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/SOLR/metainfo.xml	(revision 4cfc07e7a4425676fd98b90de8a08b78062d46c0)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/SOLR/metainfo.xml	(revision ea5b8a88deb574efd17aa14e5030b8522b9dc67c)
+@@ -22,7 +22,7 @@
+       <name>SOLR</name>
+       <displayName>Solr</displayName>
+       <comment>Solr is the popular, blazing-fast, open source enterprise search platform built on Apache Lucene.</comment>
+-      <version>8.11.2-1</version>
++      <version>8.11.2</version>
+       <components>
+         <component>
+           <name>SOLR_SERVER</name>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/SPARK/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/SPARK/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/SPARK/metainfo.xml
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/SPARK/metainfo.xml	(revision 4cfc07e7a4425676fd98b90de8a08b78062d46c0)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/SPARK/metainfo.xml	(revision ea5b8a88deb574efd17aa14e5030b8522b9dc67c)
+@@ -23,7 +23,7 @@
+       <name>SPARK</name>
+       <displayName>Spark</displayName>
+       <comment>Apache Spark is a unified analytics engine for large-scale data processing.</comment>
+-      <version>3.2.3-1</version>
++      <version>3.2.3</version>
+       <components>
+         <component>
+           <name>SPARK_JOBHISTORYSERVER</name>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/TEZ/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/TEZ/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/TEZ/metainfo.xml
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/TEZ/metainfo.xml	(revision 4cfc07e7a4425676fd98b90de8a08b78062d46c0)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/TEZ/metainfo.xml	(revision ea5b8a88deb574efd17aa14e5030b8522b9dc67c)
+@@ -22,7 +22,7 @@
+       <name>TEZ</name>
+       <displayName>Tez</displayName>
+       <comment>Tez is the next generation Hadoop Query Processing framework written on top of YARN.</comment>
+-      <version>0.10.1-1</version>
++      <version>0.10.1</version>
+       <components>
+         <component>
+           <name>TEZ_CLIENT</name>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/YARN/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/YARN/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/YARN/metainfo.xml
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/YARN/metainfo.xml	(revision 4cfc07e7a4425676fd98b90de8a08b78062d46c0)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/YARN/metainfo.xml	(revision ea5b8a88deb574efd17aa14e5030b8522b9dc67c)
+@@ -23,7 +23,7 @@
+       <name>YARN</name>
+       <displayName>YARN</displayName>
+       <comment>Apache Hadoop NextGen MapReduce (YARN)</comment>
+-      <version>3.3.4-1</version>
++      <version>3.3.4</version>
+       <components>
+
+         <component>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/ZEPPELIN/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/ZEPPELIN/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/ZEPPELIN/metainfo.xml
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/ZEPPELIN/metainfo.xml	(revision 4cfc07e7a4425676fd98b90de8a08b78062d46c0)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/ZEPPELIN/metainfo.xml	(revision ea5b8a88deb574efd17aa14e5030b8522b9dc67c)
+@@ -25,7 +25,7 @@
+         make beautiful data-driven, interactive and collaborative documents with SQL, Scala
+         and more.
+       </comment>
+-      <version>0.10.1-1</version>
++      <version>0.10.1</version>
+       <components>
+         <component>
+           <name>ZEPPELIN_SERVER</name>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/ZOOKEEPER/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/ZOOKEEPER/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/ZOOKEEPER/metainfo.xml
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/ZOOKEEPER/metainfo.xml	(revision 4cfc07e7a4425676fd98b90de8a08b78062d46c0)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/ZOOKEEPER/metainfo.xml	(revision ea5b8a88deb574efd17aa14e5030b8522b9dc67c)
+@@ -22,7 +22,7 @@
+       <name>ZOOKEEPER</name>
+       <displayName>ZooKeeper</displayName>
+       <comment>Centralized service which provides highly reliable distributed coordination</comment>
+-      <version>3.5.9-2</version>
++      <version>3.5.9</version>
+       <components>
+
+         <component>

@@ -91,6 +91,7 @@ ALL_COMPONENTS=(
   victoriametrics-download
   cloudbeaver-download
   celeborn-download
+  ozone-download
 )
 
 # 编译所有组件

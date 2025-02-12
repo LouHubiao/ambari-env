@@ -1,0 +1,31 @@
+Subject: [PATCH] feature： 支持impala 4.4.1 下载
+---
+Index: bigtop.bom
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/bigtop.bom b/bigtop.bom
+--- a/bigtop.bom	(revision 34c5471c1709030728b83416d595c94f324d5b39)
++++ b/bigtop.bom	(revision 0e9c2c039dd54b129ecf3ddcc77fbea4c8fd8991)
+@@ -629,5 +629,20 @@
+                 archive = site
+             }
+         }
++
++        'impala' {
++            name = 'impala'
++            rpm_pkg_suffix = "_" + bigtop.base_version.replace(".", "_")
++            relNotes = 'impala v4.4.1'
++            version { base = '4.4.1'; pkg = base; release = 1 }
++            tarball {
++                source = "${version.base}.tar.gz"
++                destination = "${name}-${version.base}.tar.gz"
++            }
++            url {
++                site = bigtop.gh_proxy + "https://github.com/apache/ozone/archive/refs/tags"
++                archive = site
++            }
++        }
+     }
+ }

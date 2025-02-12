@@ -92,6 +92,7 @@ ALL_COMPONENTS=(
   cloudbeaver-download
   celeborn-download
   ozone-download
+  impala-download
 )
 
 # 编译所有组件

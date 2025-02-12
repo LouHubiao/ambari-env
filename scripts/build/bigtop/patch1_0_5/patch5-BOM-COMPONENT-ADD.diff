@@ -23,7 +23,7 @@ diff --git a/bigtop.bom b/bigtop.bom
 +                destination = "${name}-${version.base}.tar.gz"
 +            }
 +            url {
-+                site = bigtop.gh_proxy + "https://github.com/apache/ozone/archive/refs/tags"
++                site = bigtop.gh_proxy + "https://github.com/apache/impala/archive/refs/tags"
 +                archive = site
 +            }
 +        }

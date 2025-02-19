@@ -17,7 +17,7 @@ index 8161be7..b69f5f3 100644
                <yarnVersion>v0.21.3</yarnVersion>
 +              <nodeDownloadRoot>https://cdn.npmmirror.com/binaries/node/</nodeDownloadRoot>
 +              <yarnDownloadRoot>
-+                https://ghgo.xyz/https://github.com/yarnpkg/yarn/releases/download/
++                https://ghfast.top/https://github.com/yarnpkg/yarn/releases/download/
 +              </yarnDownloadRoot>
              </configuration>
            </execution>
@@ -83,28 +83,28 @@ index f12ee06..4d1c429 100644
 -    "codemirror": "5.11.0",
 -    "zip-js": "1.0.0",
 -    "file-saver": "v1.2.0"
-+    "alasql": "https://ghgo.xyz/https://github.com/agershun/alasql.git#^0.4.0",
-+    "ember": "https://ghgo.xyz/https://github.com/components/ember.git#2.2.0",
-+    "ember-cli-shims": "https://ghgo.xyz/https://github.com/ember-cli/ember-cli-shims.git#0.0.6",
-+    "ember-cli-test-loader": "https://ghgo.xyz/https://github.com/ember-cli/ember-cli-test-loader.git#0.2.1",
-+    "ember-data": "https://ghgo.xyz/https://github.com/components/ember-data.git#2.1.0",
-+    "ember-load-initializers": "https://ghgo.xyz/https://github.com/ember-cli/ember-load-initializers.git#0.1.7",
-+    "ember-qunit": "https://ghgo.xyz/https://github.com/rwjblue/ember-qunit-builds.git#0.4.16",
-+    "ember-qunit-notifications": "https://ghgo.xyz/https://github.com/dockyard/ember-qunit-notifications.git#0.1.0",
-+    "loader.js": "https://ghgo.xyz/https://github.com/stefanpenner/loader.js.git#3.3.0",
-+    "qunit": "https://ghgo.xyz/https://github.com/jquery/qunit.git#1.19.0",
-+    "more-js": "https://ghgo.xyz/https://github.com/sreenaths/more-js.git#0.8.8",
-+    "bootstrap": "https://ghgo.xyz/https://github.com/twbs/bootstrap.git#3.3.6",
-+    "font-awesome": "https://ghgo.xyz/https://github.com/FortAwesome/Font-Awesome.git#4.5.0",
-+    "jquery": "https://ghgo.xyz/https://github.com/jquery/jquery-dist.git#2.1.4",
-+    "jquery-ui": "https://ghgo.xyz/https://github.com/components/jqueryui.git#1.11.4",
-+    "moment": "https://ghgo.xyz/https://github.com/moment/moment.git#2.12.0",
-+    "moment-timezone": "https://ghgo.xyz/https://github.com/moment/moment-timezone.git#0.5.0",
-+    "numeral": "https://ghgo.xyz/https://github.com/adamwdraper/Numeral-js.git#1.5.3",
-+    "qunit-notifications": "https://ghgo.xyz/https://github.com/dockyard/qunit-notifications.git#0.1.1",
-+    "snippet-ss": "https://ghgo.xyz/https://github.com/sreenaths/snippet-ss.git#1.11.0",
-+    "jquery-mousewheel": "https://ghgo.xyz/https://github.com/jquery/jquery-mousewheel.git#3.1.13",
-+    "codemirror": "https://ghgo.xyz/https://github.com/components/codemirror.git#5.11.0",
++    "alasql": "https://ghfast.top/https://github.com/agershun/alasql.git#^0.4.0",
++    "ember": "https://ghfast.top/https://github.com/components/ember.git#2.2.0",
++    "ember-cli-shims": "https://ghfast.top/https://github.com/ember-cli/ember-cli-shims.git#0.0.6",
++    "ember-cli-test-loader": "https://ghfast.top/https://github.com/ember-cli/ember-cli-test-loader.git#0.2.1",
++    "ember-data": "https://ghfast.top/https://github.com/components/ember-data.git#2.1.0",
++    "ember-load-initializers": "https://ghfast.top/https://github.com/ember-cli/ember-load-initializers.git#0.1.7",
++    "ember-qunit": "https://ghfast.top/https://github.com/rwjblue/ember-qunit-builds.git#0.4.16",
++    "ember-qunit-notifications": "https://ghfast.top/https://github.com/dockyard/ember-qunit-notifications.git#0.1.0",
++    "loader.js": "https://ghfast.top/https://github.com/stefanpenner/loader.js.git#3.3.0",
++    "qunit": "https://ghfast.top/https://github.com/jquery/qunit.git#1.19.0",
++    "more-js": "https://ghfast.top/https://github.com/sreenaths/more-js.git#0.8.8",
++    "bootstrap": "https://ghfast.top/https://github.com/twbs/bootstrap.git#3.3.6",
++    "font-awesome": "https://ghfast.top/https://github.com/FortAwesome/Font-Awesome.git#4.5.0",
++    "jquery": "https://ghfast.top/https://github.com/jquery/jquery-dist.git#2.1.4",
++    "jquery-ui": "https://ghfast.top/https://github.com/components/jqueryui.git#1.11.4",
++    "moment": "https://ghfast.top/https://github.com/moment/moment.git#2.12.0",
++    "moment-timezone": "https://ghfast.top/https://github.com/moment/moment-timezone.git#0.5.0",
++    "numeral": "https://ghfast.top/https://github.com/adamwdraper/Numeral-js.git#1.5.3",
++    "qunit-notifications": "https://ghfast.top/https://github.com/dockyard/qunit-notifications.git#0.1.1",
++    "snippet-ss": "https://ghfast.top/https://github.com/sreenaths/snippet-ss.git#1.11.0",
++    "jquery-mousewheel": "https://ghfast.top/https://github.com/jquery/jquery-mousewheel.git#3.1.13",
++    "codemirror": "https://ghfast.top/https://github.com/components/codemirror.git#5.11.0",
 +    "zip-js": "https://ghgo.xyz/https://github.com/sreenaths/zip.js.git#1.0.0",
 +    "file-saver": "https://ghgo.xyz/https://github.com/eligrey/FileSaver.js.git#v1.2.0"
    }

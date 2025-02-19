@@ -320,7 +320,7 @@ diff --git a/bigtop.bom b/bigtop.bom
 +                source = "${version.base}.tar.gz"
 +            }
 +            url {
-+                site = "https://ghgo.xyz/https://github.com/apache/dolphinscheduler/archive/refs/tags"
++                site = "https://ghfast.top/https://github.com/apache/dolphinscheduler/archive/refs/tags"
 +                archive = site
 +            }
 +        }

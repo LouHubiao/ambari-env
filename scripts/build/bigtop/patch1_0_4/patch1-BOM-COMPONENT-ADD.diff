@@ -12,7 +12,7 @@ diff --git a/bigtop.bom b/bigtop.bom
  bigtop {
  /** Base Configuration of the mirror and archives */
      base_version = "3.2.0"
-+    gh_proxy = "https://ghgo.xyz/"
++    gh_proxy = "https://ghfast.top/"
      version = base_version + "-SNAPSHOT"
      stack {
          'jdk' { version = "1." + (System.getenv('BIGTOP_JDK') ?: "8"); version_base = version }
@@ -20,7 +20,7 @@ diff --git a/bigtop.bom b/bigtop.bom
                  source = "v${version.base}.tar.gz"
              }
              url {
--                site = "https://ghgo.xyz/https://github.com/Alluxio/alluxio/archive"
+-                site = "https://ghfast.top/https://github.com/Alluxio/alluxio/archive"
 +                site = bigtop.gh_proxy + "https://github.com/Alluxio/alluxio/archive"
                  archive = site
              }
@@ -29,7 +29,7 @@ diff --git a/bigtop.bom b/bigtop.bom
                  source = "${version.base}.tar.gz"
              }
              url {
--                site = "https://ghgo.xyz/https://github.com/brianfrankcooper/YCSB/archive"
+-                site = "https://ghfast.top/https://github.com/brianfrankcooper/YCSB/archive"
 +                site = bigtop.gh_proxy + "https://github.com/brianfrankcooper/YCSB/archive"
                  archive = site
              }
@@ -38,7 +38,7 @@ diff --git a/bigtop.bom b/bigtop.bom
                  source = "${version.base}.tar.gz"
              }
              url {
--                site = "https://ghgo.xyz/https://github.com/greenplum-db/gpdb/archive/"
+-                site = "https://ghfast.top/https://github.com/greenplum-db/gpdb/archive/"
 +                site = bigtop.gh_proxy + "https://github.com/greenplum-db/gpdb/archive/"
                  archive = site
              }
@@ -47,7 +47,7 @@ diff --git a/bigtop.bom b/bigtop.bom
                  source = destination
              }
              url {
--                site = "https://ghgo.xyz/https://github.com/apache/ranger/archive/refs/tags"
+-                site = "https://ghfast.top/https://github.com/apache/ranger/archive/refs/tags"
 +                site = bigtop.gh_proxy + "https://github.com/apache/ranger/archive/refs/tags"
                  archive = site
              }
@@ -56,7 +56,7 @@ diff --git a/bigtop.bom b/bigtop.bom
                  source = destination
              }
              url {
--                site = "https://ghgo.xyz/https://github.com/redis/redis/archive/refs/tags/"
+-                site = "https://ghfast.top/https://github.com/redis/redis/archive/refs/tags/"
 +                site = bigtop.gh_proxy + "https://github.com/redis/redis/archive/refs/tags/"
                  archive = site
              }
@@ -65,7 +65,7 @@ diff --git a/bigtop.bom b/bigtop.bom
                  source = "${version.base}.tar.gz"
              }
              url {
--                site = "https://ghgo.xyz/https://github.com/apache/dolphinscheduler/archive/refs/tags"
+-                site = "https://ghfast.top/https://github.com/apache/dolphinscheduler/archive/refs/tags"
 +                site = bigtop.gh_proxy + "https://github.com/apache/dolphinscheduler/archive/refs/tags"
 +                archive = site
 +            }

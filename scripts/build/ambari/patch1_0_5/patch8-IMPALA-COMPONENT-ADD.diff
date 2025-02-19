@@ -1,0 +1,2382 @@
+Subject: [PATCH] feature: impala 4.4.1 集成
+---
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/service_advisor.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/service_advisor.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/service_advisor.py
+new file mode 100644
+--- /dev/null	(date 1739324128123)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/service_advisor.py	(date 1739324128123)
+@@ -0,0 +1,246 @@
++#!/usr/bin/env ambari-python-wrap
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++"""
++
++# Python imports
++import imp
++import os
++import traceback
++import re
++import socket
++import fnmatch
++
++from resource_management.core.logger import Logger
++
++SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
++STACKS_DIR = os.path.join(SCRIPT_DIR, "../../../../../stacks/")
++PARENT_FILE = os.path.join(STACKS_DIR, "service_advisor.py")
++
++try:
++    if "BASE_SERVICE_ADVISOR" in os.environ:
++        PARENT_FILE = os.environ["BASE_SERVICE_ADVISOR"]
++    with open(PARENT_FILE, "rb") as fp:
++        service_advisor = imp.load_module(
++            "service_advisor", fp, PARENT_FILE, (".py", "rb", imp.PY_SOURCE)
++        )
++except Exception as e:
++    traceback.print_exc()
++    print("Failed to load parent")
++
++
++class ImpalaServiceAdvisor(service_advisor.ServiceAdvisor):
++    def __init__(self, *args, **kwargs):
++        self.as_super = super(ImpalaServiceAdvisor, self)
++        self.as_super.__init__(*args, **kwargs)
++
++        # Always call these methods
++        self.modifyMastersWithMultipleInstances()
++        self.modifyCardinalitiesDict()
++        self.modifyHeapSizeProperties()
++        self.modifyNotValuableComponents()
++        self.modifyComponentsNotPreferableOnServer()
++        self.modifyComponentLayoutSchemes()
++
++    def modifyMastersWithMultipleInstances(self):
++        """
++        Modify the set of masters with multiple instances.
++        Must be overriden in child class.
++        """
++        # Nothing to do
++        pass
++
++    def modifyCardinalitiesDict(self):
++        """
++        Modify the dictionary of cardinalities.
++        Must be overriden in child class.
++        """
++        # Nothing to do
++        pass
++
++    def modifyHeapSizeProperties(self):
++        """
++        Modify the dictionary of heap size properties.
++        Must be overriden in child class.
++        """
++        pass
++
++    def modifyNotValuableComponents(self):
++        """
++        Modify the set of components whose host assignment is based on other services.
++        Must be overriden in child class.
++        """
++        # Nothing to do
++        pass
++
++    def modifyComponentsNotPreferableOnServer(self):
++        """
++        Modify the set of components that are not preferable on the server.
++        Must be overriden in child class.
++        """
++        # Nothing to do
++        pass
++
++    def modifyComponentLayoutSchemes(self):
++        """
++        Modify layout scheme dictionaries for components.
++        The scheme dictionary basically maps the number of hosts to
++        host index where component should exist.
++        Must be overriden in child class.
++        """
++
++        # Nothing to do
++        pass
++
++    def getServiceComponentLayoutValidations(self, services, hosts):
++        """
++        Get a list of errors.
++        Must be overriden in child class.
++        """
++
++        return self.getServiceComponentCardinalityValidations(services, hosts, "IMPALA")
++
++    def getServiceConfigurationRecommendations(
++            self, configurations, clusterData, services, hosts
++    ):
++        """
++        Entry point.
++        Must be overriden in child class.
++        """
++        # Logger.info("Class: %s, Method: %s. Recommending Service Configurations." %
++        #            (self.__class__.__name__, inspect.stack()[0][3]))
++
++        recommender = ImpalaRecommender()
++        recommender.recommendImpalaConfigurationsFromHDP33(
++            configurations, clusterData, services, hosts
++        )
++
++    # def getServiceConfigurationRecommendationsForSSO(self, configurations, clusterData, services, hosts):
++    #   """
++    #   Entry point.
++    #   Must be overriden in child class.
++    #   """
++    #   recommender = ImpalaRecommender()
++    #   recommender.recommendConfigurationsForSSO(configurations, clusterData, services, hosts)
++
++    def getServiceConfigurationsValidationItems(
++            self, configurations, recommendedDefaults, services, hosts
++    ):
++        """
++        Entry point.
++        Validate configurations for the service. Return a list of errors.
++        The code for this function should be the same for each Service Advisor.
++        """
++        # Logger.info("Class: %s, Method: %s. Validating Configurations." %
++        #            (self.__class__.__name__, inspect.stack()[0][3]))
++
++        return []
++
++    @staticmethod
++    def isKerberosEnabled(services, configurations):
++        """
++        Determines if security is enabled by testing the value of core-site/hadoop.security.authentication enabled.
++        If the property exists and is equal to "kerberos", then is it enabled; otherwise is it assumed to be
++        disabled.
++
++        :type services: dict
++        :param services: the dictionary containing the existing configuration values
++        :type configurations: dict
++        :param configurations: the dictionary containing the updated configuration values
++        :rtype: bool
++        :return: True or False
++        """
++        if (
++                configurations
++                and "core-site" in configurations
++                and "hadoop.security.authentication"
++                in configurations["core-site"]["properties"]
++        ):
++            return (
++                    configurations["core-site"]["properties"][
++                        "hadoop.security.authentication"
++                    ].lower()
++                    == "kerberos"
++            )
++        elif (
++                services
++                and "core-site" in services["configurations"]
++                and "hadoop.security.authentication"
++                in services["configurations"]["core-site"]["properties"]
++        ):
++            return (
++                    services["configurations"]["core-site"]["properties"][
++                        "hadoop.security.authentication"
++                    ].lower()
++                    == "kerberos"
++            )
++        else:
++            return False
++
++
++class ImpalaRecommender(service_advisor.ServiceAdvisor):
++    """
++    Impala Recommender suggests properties when adding the service for the first time or modifying configs via the UI.
++    """
++
++    def __init__(self, *args, **kwargs):
++        self.as_super = super(ImpalaRecommender, self)
++        self.as_super.__init__(*args, **kwargs)
++
++    def recommendImpalaConfigurationsFromHDP33(
++            self, configurations, clusterData, services, hosts
++    ):
++        """
++        Recommend configurations for this service based on HDP 3.3.
++        """
++
++        putHiveMetastoreSiteProperty = self.putProperty(
++            configurations, "hivemetastore-site'", services
++        )
++        # putHiveMetastoreSitePropertyAttribute = self.putPropertyAttribute(configurations, "hivemetastore-site'")
++        putHiveMetastoreSiteProperty(
++            "hive.metastore.alter.notifications.basic", "false"
++        )
++        putHiveMetastoreSiteProperty(
++            "hive.metastore.event.db.notification.api.auth", "false"
++        )
++
++        putImpalaEnvProperty = self.putProperty(configurations, "impala-env", services)
++        putImpalaEnvPropertyAttribute = self.putPropertyAttribute(
++            configurations, "impala-env"
++        )
++
++        # Recommend Ranger Hive authorization as per Ranger Hive plugin property
++        if (
++                "ranger-env" in services["configurations"]
++                and "impala-env" in services["configurations"]
++                and "ranger-hive-plugin-enabled"
++                in services["configurations"]["ranger-env"]["properties"]
++        ):
++            rangerEnvHivePluginProperty = services["configurations"]["ranger-env"][
++                "properties"
++            ]["ranger-hive-plugin-enabled"]
++            ranger_plugin_hive_service_name = services["configurations"][
++                "ranger-hive-security"
++            ]["properties"]["ranger.plugin.hive.service.name"]
++
++            putImpalaEnvProperty("enable_ranger", "false")
++            if rangerEnvHivePluginProperty.lower() == "yes":
++                putImpalaEnvProperty("enable_ranger", "true")
++                putImpalaEnvProperty(
++                    "ranger_service_name", ranger_plugin_hive_service_name
++                )
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/kerberos.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/kerberos.json b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/kerberos.json
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/kerberos.json	(date 1735023255000)
+@@ -0,0 +1,157 @@
++{
++  "services": [
++    {
++      "name": "IMPALA",
++      "identities": [
++        {
++          "name": "impala_spnego",
++          "reference": "/spnego"
++        },
++        {
++          "name": "impala",
++          "principal": {
++            "value": "${impala-env/impala_user}${principal_suffix}@${realm}",
++            "type": "user",
++            "configuration": "impala-env/impala_principal_name",
++            "local_username": "${impala-env/impala_user}"
++          },
++          "keytab": {
++            "file": "${keytab_dir}/impala.headless.keytab",
++            "owner": {
++              "name": "${impala-env/impala_user}",
++              "access": "r"
++            },
++            "group": {
++              "name": "${cluster-env/user_group}",
++              "access": "r"
++            },
++            "configuration": "impala-env/impala_user_keytab"
++          }
++        },
++        {
++          "name": "impala_smokeuser",
++          "reference": "/smokeuser"
++        }
++      ],
++      "configurations": [
++        {
++          "impala-env": {
++            "impala.security.enabled": "true",
++            "impala.security.http.kerberos.enabled": "true"
++          }
++        }
++      ],
++      "components": [
++        {
++          "name": "IMPALA_STATE_STORE",
++          "identities": [
++            {
++              "name": "impala_statesore",
++              "principal": {
++                "value": "impala/_HOST@${realm}",
++                "type": "service",
++                "configuration": "impala-env/impala_state_store_kerberos_principal",
++                "local_username": "${impala-env/impala_user}"
++              },
++              "keytab": {
++                "file": "${keytab_dir}/impala.service.keytab",
++                "owner": {
++                  "name": "${impala-env/impala_user}",
++                  "access": "r"
++                },
++                "group": {
++                  "name": "${cluster-env/user_group}",
++                  "access": ""
++                },
++                "configuration": "impala-env/impala_state_store_kerberos_keytab_file"
++              }
++            },
++            {
++              "name": "impala_statesore_spnego",
++              "reference": "/spnego",
++              "principal": {
++                "configuration": "impala-env/impala_state_store_http_kerberos_principal"
++              },
++              "keytab": {
++                "configuration": "impala-env/impala_state_store_http_kerberos_keytab_file"
++              }
++            }
++          ]
++        },
++        {
++          "name": "IMPALA_CATALOG",
++          "identities": [
++            {
++              "name": "impala_catalog",
++              "principal": {
++                "value": "impala/_HOST@${realm}",
++                "type": "service",
++                "configuration": "impala-env/impala_catalog_kerberos_principal",
++                "local_username": "${impala-env/impala_user}"
++              },
++              "keytab": {
++                "file": "${keytab_dir}/impala.service.keytab",
++                "owner": {
++                  "name": "${impala-env/impala_user}",
++                  "access": "r"
++                },
++                "group": {
++                  "name": "${cluster-env/user_group}",
++                  "access": ""
++                },
++                "configuration": "impala-env/impala_catalog_kerberos_keytab_file"
++              }
++            },
++            {
++              "name": "impala_statesore_spnego",
++              "reference": "/spnego",
++              "principal": {
++                "configuration": "impala-env/impala_catalog_http_kerberos_principal"
++              },
++              "keytab": {
++                "configuration": "impala-env/impala_catalog_http_kerberos_keytab_file"
++              }
++            }
++          ]
++        },
++        {
++          "name": "IMPALA_DAEMON",
++          "identities": [
++            {
++              "name": "impala_daemon",
++              "principal": {
++                "value": "impala/_HOST@${realm}",
++                "type": "service",
++                "configuration": "impala-env/impala_daemon_kerberos_principal",
++                "local_username": "${impala-env/impala_user}"
++              },
++              "keytab": {
++                "file": "${keytab_dir}/impala.service.keytab",
++                "owner": {
++                  "name": "${impala-env/impala_user}",
++                  "access": "r"
++                },
++                "group": {
++                  "name": "${cluster-env/user_group}",
++                  "access": ""
++                },
++                "configuration": "impala-env/impala_daemo_kerberos_keytab_file"
++              }
++            },
++            {
++              "name": "impala_daemo_spnego",
++              "reference": "/spnego",
++              "principal": {
++                "configuration": "impala-env/impala_daemo_http_kerberos_principal"
++              },
++              "keytab": {
++                "configuration": "impala-env/impala_daemo_http_kerberos_keytab_file"
++              }
++            }
++          ]
++        }
++
++      ]
++    }
++  ]
++}
+\ No newline at end of file
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/role_command_order.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/role_command_order.json b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/role_command_order.json
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/role_command_order.json	(date 1735023255000)
+@@ -0,0 +1,10 @@
++{
++  "general_deps" : {
++    "_comment" : "dependencies for Impala",
++	  "IMPALA_CATALOG-START" : ["IMPALA_STATE_STORE-START","HIVE_METASTORE-START"],
++	  "IMPALA_DAEMON-START" : ["IMPALA_STATE_STORE-START","IMPALA_CATALOG-START","KUDU_MASTER-START","KUDU_TSERVER-START"],
++    "IMPALA_STATE_STORE-START": ["HIVE_METASTORE-START"],
++    "IMPALA_STATE_STORE-STOP": ["IMPALA_CATALOG-STOP","IMPALA_DAEMON-STOP"],
++    "IMPALA_CATALOG-STOP": ["IMPALA_DAEMON-STOP"]
++  }
++}
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala.py
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala.py	(date 1735023255000)
+@@ -0,0 +1,132 @@
++#!/usr/bin/env python
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++
++import os
++from ambari_commons.os_family_impl import OsFamilyFuncImpl, OsFamilyImpl
++from resource_management import *
++
++
++@OsFamilyFuncImpl(os_family=OsFamilyImpl.DEFAULT)
++def impala(name=None):
++    import params
++
++    Directory(
++        params.impala_log_dir,
++        owner=params.impala_user,
++        create_parents=True,
++        group=params.user_group,
++        mode=0o775,
++    )
++
++    Directory(
++        params.impala_pid_dir,
++        owner=params.impala_user,
++        create_parents=True,
++        group=params.user_group,
++        mode=0o775,
++    )
++
++    XmlConfig(
++        "core-site.xml",
++        conf_dir=params.impala_conf_dir,
++        configurations=params.core_site_configurations,
++        configuration_attributes=params.core_site_attributes,
++        owner=params.impala_user,
++        group=params.user_group,
++        mode=0o644,
++    )
++    XmlConfig(
++        "hdfs-site.xml",
++        conf_dir=params.impala_conf_dir,
++        configurations=params.hdfs_site_configurations,
++        configuration_attributes=params.hdfs_site_attributes,
++        owner=params.impala_user,
++        group=params.user_group,
++        mode=0o644,
++    )
++    XmlConfig(
++        "hive-site.xml",
++        conf_dir=params.impala_conf_dir,
++        configurations=params.hive_site_configurations,
++        configuration_attributes=params.hive_site_attributes,
++        owner=params.impala_user,
++        group=params.user_group,
++        mode=0o644,
++    )
++
++    File(
++        os.path.join(params.impala_conf_dir, "impala-env.sh"),
++        owner=params.impala_user,
++        group=params.user_group,
++        content=InlineTemplate(params.impala_template),
++        mode=0o755,
++    )
++
++    File(
++        params.start_impala_path,
++        mode=0o755,
++        content=Template(format("{start_impala_script}")),
++    )
++
++    XmlConfig(
++        "llama-site.xml",
++        conf_dir=params.impala_conf_dir,
++        configurations=params.impala_llamaSite_configurations,
++        configuration_attributes=params.hive_llamaSite_attributes,
++        owner=params.impala_user,
++        group=params.user_group,
++        mode=0o644,
++    )
++
++    File(
++        os.path.join(params.impala_conf_dir, "fair-scheduler.xml"),
++        owner=params.impala_user,
++        group=params.user_group,
++        content=InlineTemplate(params.impala_fairscheduler_template),
++        mode=0o755,
++    )
++
++    if params.enable_ranger:
++        XmlConfig(
++            "ranger-hive-audit.xml",
++            conf_dir=params.impala_conf_dir,
++            configurations=params.ranger_hive_audit_configurations,
++            configuration_attributes=params.ranger_hive_audit_attributes,
++            owner=params.impala_user,
++            group=params.user_group,
++            mode=0o644,
++        )
++        XmlConfig(
++            "ranger-hive-security.xml",
++            conf_dir=params.impala_conf_dir,
++            configurations=params.ranger_hive_security_configurations,
++            configuration_attributes=params.ranger_hive_security_attributes,
++            owner=params.impala_user,
++            group=params.user_group,
++            mode=0o644,
++        )
++        Directory(
++            params.ranger_plugin_hive_policy_cachedir,
++            create_parents=True,
++            cd_access="a",
++            owner=params.hive_user,
++            group=params.user_group,
++            mode=0o775,
++        )
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala_base.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala_base.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala_base.py
+new file mode 100644
+--- /dev/null	(date 1739323118047)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala_base.py	(date 1739323118047)
+@@ -0,0 +1,74 @@
++#!/usr/bin/env python
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++from resource_management import *
++import os
++
++
++class ImpalaBase(Script):
++    impala_packages = [
++        "impala-server",
++        "impala-catalog",
++        "impala-state-store",
++        "impala-shell",
++    ]
++
++    def install_impala(self, env):
++        cmd = "useradd impala"
++        Execute('echo "Running cmd: ' + cmd + '"')
++        Execute(cmd, ignore_failures=True)
++        self.install_packages(env)
++        if self.impala_packages is not None and len(self.impala_packages):
++            for pack in self.impala_packages:
++                Package(pack)
++        import params
++        env.set_params(params)
++
++        File(format("{tmp_dir}/impala_init_lib.sh"),
++             content=Template('init_lib.sh.j2'), mode=0o700)
++        Execute(format("bash {tmp_dir}/impala_init_lib.sh"))
++
++    def configure_impala(self, env):
++        import params
++        env.set_params(params)
++        realm_name = (
++            os.popen('grep "default_realm" /etc/krb5.conf ')
++            .read()
++            .strip(os.linesep)
++            .split(" ")[-1]
++        )
++        File(
++            "/etc/default/impala",
++            content=Template("impala.j2", realm_name=realm_name),
++            mode=0o644,
++        )
++        Directory(format("{impala_scratch_dir}"), mode=0o777)
++        self.configure_hdfs()
++
++    @staticmethod
++    def configure_hdfs():
++        import params
++
++        for service_name in list(params.scp_conf_from.keys()):
++            if params.scp_conf_from[service_name]["host"]:
++                for fndir in params.scp_conf_from[service_name]["files"]:
++                    Execute(
++                        format("ln -s %s /etc/impala/conf/" % fndir),
++                        ignore_failures=True,
++                    )
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/params.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/params.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/params.py
+new file mode 100644
+--- /dev/null	(date 1739323993408)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/params.py	(date 1739323993408)
+@@ -0,0 +1,193 @@
++#!/usr/bin/env python
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++import socket
++import os
++
++from resource_management import *
++from ambari_commons.constants import AMBARI_SUDO_BINARY
++from resource_management.libraries.script.script import Script
++from resource_management.libraries.functions.expect import expect
++from resource_management.libraries.functions.stack_features import check_stack_feature
++from resource_management.libraries.functions.stack_features import (
++    get_stack_feature_version,
++)
++import status_params
++
++script_dir = os.path.dirname(os.path.realpath(__file__))
++
++sudo = AMBARI_SUDO_BINARY
++
++config = Script.get_config()
++tmp_dir = Script.get_tmp_dir()
++stack_root = Script.get_stack_root()
++stack_name = default("/hostLevelParams/stack_name", None)
++stack_version_buildnum = default("/commandParams/version", None)
++component_directory = status_params.component_directory
++cluster_name = config["clusterName"]
++
++impala_env = config["configurations"]["impala-env"]
++impala_log_dir = impala_env["impala_log_dir"]
++impala_pid_dir = impala_env["impala_pid_dir"]
++impala_scratch_dir = impala_env["impala_scratch_dir"]
++impala_log_file = os.path.join(impala_log_dir, "impala-setup.log")
++impala_catalog_host = config["clusterHostInfo"]["impala_catalog_hosts"][0]
++impala_state_store_host = config["clusterHostInfo"]["impala_state_store_hosts"][0]
++
++impala_home = format("{stack_root}/current/{component_directory}")
++impala_conf_dir = "/etc/impala/conf"
++impala_bin_home = format("{impala_home}/bin")
++
++# users
++impala_user = config["configurations"]["impala-env"]["impala_user"]
++user_group = config["configurations"]["cluster-env"]["user_group"]
++hdfs_user = config["configurations"]["hadoop-env"]["hdfs_user"]
++hive_user = config["configurations"]["hive-env"]["hive_user"]
++
++hive_metastore_warehouse_dir = config["configurations"]["hive-site"][
++    "hive.metastore.warehouse.dir"
++]
++
++enable_ranger = impala_env["enable_ranger"]
++
++current_host_name = socket.getfqdn()
++
++# Java home path
++java_home = (
++    config["ambariLevelParams"]["java_home"]
++    if "java_home" in config["ambariLevelParams"]
++    else None
++)
++java_exec = format("{java_home}/bin/java")
++java_version = expect("/ambariLevelParams/java_version", int)
++
++# security related
++security_enabled = config["configurations"]["cluster-env"]["security_enabled"]
++realm_name = config["configurations"]["kerberos-env"]["realm"]
++kinit_path_local = get_kinit_path(
++    default("/configurations/kerberos-env/executable_search_paths", None)
++)
++
++hdfs_host = default("/clusterHostInfo/namenode_hosts", [""])[0]
++if not hdfs_host:
++    hdfs_host = default("/clusterHostInfo/namenode_host", [""])[0]
++hive_host = default("/clusterHostInfo/hive_metastore_host", [""])[0]
++# kudu_master_hosts = ",".join(config['clusterHostInfo']['kudu_master_hosts'])
++# kudu_master_host_num = len(config['clusterHostInfo']['kudu_master_hosts'])
++
++kudu_master_hosts = ""
++kudu_master_host_num = 0
++if "kudu_master_hosts" in config["clusterHostInfo"]:
++    kudu_master_hosts_list = config["clusterHostInfo"]["kudu_master_hosts"]
++    # print("*****-----****")
++    # print(kudu_master_hosts_list)
++    kudu_master_host_num = len(kudu_master_hosts_list)
++    if kudu_master_host_num > 0:
++        kudu_master_hosts = ",".join(kudu_master_hosts_list)
++
++scp_conf_dir = "/etc/impala/conf"
++scp_conf_from = {
++    "hdfs": {
++        "host": hdfs_host,
++        "files": [
++            "/etc/hadoop/conf/core-site.xml",
++            "/etc/hadoop/conf/hdfs-site.xml",
++            "/etc/hive/conf/hive-site.xml"
++        ],
++    }
++}
++
++# core-site
++core_site_configurations = config["configurations"]["core-site"]
++core_site_attributes = config["configurationAttributes"]["core-site"]
++
++# hdfs-site
++hdfs_site_configurations = config["configurations"]["hdfs-site"]
++hdfs_site_attributes = config["configurationAttributes"]["hdfs-site"]
++
++# hive-site
++hive_site_configurations = config["configurations"]["hive-site"]
++hive_site_attributes = config["configurationAttributes"]["hive-site"]
++
++ranger_hive_audit_configurations = config["configurations"]["ranger-hive-audit"]
++ranger_hive_audit_attributes = config["configurationAttributes"]["ranger-hive-audit"]
++
++ranger_hive_security_configurations = config["configurations"]["ranger-hive-security"]
++ranger_hive_security_attributes = config["configurationAttributes"][
++    "ranger-hive-security"
++]
++
++# get the correct version to use for checking stack features
++version_for_stack_feature_checks = get_stack_feature_version(config)
++# get ranger hive properties if enable_ranger_hive is True
++enable_ranger_hive = (
++        config["configurations"]["hive-env"]["hive_security_authorization"].lower()
++        == "ranger"
++)
++# ranger support xml_configuration flag, instead of depending on ranger xml_configurations_supported/ranger-env, using stack feature
++xml_configurations_supported = check_stack_feature(
++    StackFeature.RANGER_XML_CONFIGURATION, version_for_stack_feature_checks
++)
++
++if enable_ranger_hive:
++    # get ranger policy url
++    policymgr_mgr_url = config["configurations"]["admin-properties"][
++        "policymgr_external_url"
++    ]
++    if xml_configurations_supported:
++        policymgr_mgr_url = config["configurations"]["ranger-hive-security"][
++            "ranger.plugin.hive.policy.rest.url"
++        ]
++
++    if not is_empty(policymgr_mgr_url) and policymgr_mgr_url.endswith("/"):
++        policymgr_mgr_url = policymgr_mgr_url.rstrip("/")
++
++    # ranger audit db user
++    xa_audit_db_user = default(
++        "/configurations/admin-properties/audit_db_user", "rangerlogger"
++    )
++
++    # ranger hive service name
++    repo_name = str(config["clusterName"]) + "_hive"
++    repo_name_value = config["configurations"]["ranger-hive-security"][
++        "ranger.plugin.hive.service.name"
++    ]
++    if not is_empty(repo_name_value) and repo_name_value != "{{repo_name}}":
++        repo_name = repo_name_value
++
++    ranger_plugin_hive_policy_cachedir = format(
++        format(
++            default(
++                "/configurations/ranger-hive-security/ranger.plugin.hive.policy.cache.dir",
++                "/etc/ranger/{repo_name}/policycache",
++            )
++        )
++    )
++
++impala_template = config["configurations"]["impala-env"]["content"]
++
++# Starting cmd
++start_impala_script = "startImpala.sh.j2"
++
++start_impala_path = format("{tmp_dir}/start_impala_script")
++
++# ADMISSION_CONTROL
++impala_fairscheduler_template = config["configurations"]["fair-scheduler"]["content"]
++impala_llamaSite_configurations = config["configurations"]["llama-site"]
++hive_llamaSite_attributes = config["configurationAttributes"]["llama-site"]
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/status_params.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/status_params.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/status_params.py
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/status_params.py	(date 1735023255000)
+@@ -0,0 +1,57 @@
++#!/usr/bin/env python
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++
++from ambari_commons.os_check import OSCheck
++from resource_management.libraries.functions import StackFeature
++from resource_management.libraries.functions import format
++from resource_management.libraries.functions.default import default
++from resource_management.libraries.functions.stack_features import check_stack_feature
++from resource_management.libraries.functions.version import format_stack_version
++from resource_management.libraries.script.script import Script
++
++# a map of the Ambari role to the component name
++# for use with <stack-root>/current/<component>
++# TODO: add the map to the current with the actual
++SERVER_ROLE_DIRECTORY_MAP = {
++    "IMPALA_HOME": "impala",
++}
++
++component_directory = Script.get_component_from_role(
++    SERVER_ROLE_DIRECTORY_MAP, "IMPALA_HOME"
++)
++
++config = Script.get_config()
++
++if OSCheck.is_windows_family():
++    prometheus_win_service_name = "prometheusserver"
++else:
++    stack_version_unformatted = str(config["clusterLevelParams"]["stack_version"])
++    stack_version_formatted = format_stack_version(stack_version_unformatted)
++    stack_root = Script.get_stack_root()
++
++    impala_config_dir = "/etc/impala/conf"
++
++
++stack_name = default("/clusterLevelParams/stack_name", None)
++
++impala_pid_dir = config["configurations"]["impala-env"]["impala_pid_dir"]
++impala_catalogd_pid = format("{impala_pid_dir}/catalogd.pid")
++impala_impalad_pid = format("{impala_pid_dir}/impalad.pid")
++impala_statestored_pid = format("{impala_pid_dir}/statestored.pid")
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala-daemon.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala-daemon.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala-daemon.py
+new file mode 100644
+--- /dev/null	(date 1739323118057)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala-daemon.py	(date 1739323118057)
+@@ -0,0 +1,66 @@
++#!/usr/bin/env python
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++from resource_management import *
++from impala_service import impala_service
++from impala import impala
++
++
++class ImpalaDaemon(Script):
++    def install(self, env):
++        import params
++        self.install_packages(env)
++        self.configure(env)
++
++    def configure(self, env):
++        import params
++        env.set_params(params)
++        impala(name='impalad')
++
++    def start(self, env, upgrade_type=None):
++        import params
++        env.set_params(params)
++        self.configure(env)
++        impala_service('impalad', action='start', upgrade_type=upgrade_type)
++
++    def stop(self, env, upgrade_type=None):
++      import params
++      env.set_params(params)
++      impala_service('impalad', action='stop', upgrade_type=upgrade_type)
++
++    def status(self, env):
++      import status_params
++      env.set_params(status_params)
++      check_process_status(status_params.impala_impalad_pid)
++
++    def get_log_folder(self):
++      import params
++      return params.impala_log_dir
++
++    def get_user(self):
++      import params
++      return params.impala_user
++
++    def get_pid_files(self):
++        import status_params
++        return [status_params.impala_impalad_pid]
++
++
++if __name__ == "__main__":
++    ImpalaDaemon().execute()
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala_service.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala_service.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala_service.py
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala_service.py	(date 1735023255000)
+@@ -0,0 +1,121 @@
++#!/usr/bin/env python
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++
++# Python Imports
++import os
++import time
++
++# Ambari Commons & Resource Management Imports
++from ambari_commons.constants import UPGRADE_TYPE_ROLLING
++from resource_management.core import shell
++from resource_management.core import utils
++from resource_management.core.exceptions import ComponentIsNotRunning, Fail
++from resource_management.core.logger import Logger
++from resource_management.core.resources.system import File, Execute
++from resource_management.core.shell import as_user, quote_bash_args
++from resource_management.libraries.functions import get_user_call_output
++from resource_management.libraries.functions import StackFeature
++from resource_management.libraries.functions.check_process_status import (
++    check_process_status,
++)
++from resource_management.libraries.functions.decorator import retry
++from resource_management.libraries.functions.format import format
++from resource_management.libraries.functions.show_logs import show_logs
++from resource_management.libraries.functions.stack_features import check_stack_feature
++
++
++def impala_service(name, action="start", upgrade_type=None):
++    import params
++    import status_params
++
++    if name == "catalogd":
++        pid_file = status_params.impala_catalogd_pid
++        cmd = format("{start_impala_path} catalogd")
++    elif name == "impalad":
++        pid_file = status_params.impala_impalad_pid
++        cmd = format("{start_impala_path} impalad")
++    elif name == "statestored":
++        pid_file = status_params.impala_statestored_pid
++        cmd = format("{start_impala_path} statestored")
++
++    # if params.security_enabled :
++    #    impala_kinit_cmd = format("{kinit_path_local} -kt {impala_keytab} {impala_principal}; ")
++    #    Execute(impala_kinit_cmd, user=params.impala_user)
++
++    pid = get_user_call_output.get_user_call_output(
++        format("cat {pid_file}"), user=params.impala_user, is_checked_call=False
++    )[1]
++    process_id_exists_command = format(
++        "ls {pid_file} >/dev/null 2>&1 && ps -p {pid} >/dev/null 2>&1"
++    )
++
++    if action == "start":
++        if not params.enable_ranger:
++            if not params.security_enabled:
++                # when not enable ranger and not enable kerberso, setfacl
++                impala_permission_cmd = format(
++                    "hadoop fs -setfacl -m user:{impala_user}:rwx {hive_metastore_warehouse_dir} "
++                )
++                Execute(impala_permission_cmd, user=params.hdfs_user)
++            else:
++                # TODO:
++                Logger.error(" when enable kerberos, you must enable ranger! ")
++
++        daemon_cmd = cmd
++        impala_bin = params.impala_bin_home
++
++        Logger.info("execute daemon_cmd:" + daemon_cmd)
++
++        Execute(
++            daemon_cmd,
++            user=params.impala_user,
++            environment={"JAVA_HOME": params.java_home},
++            not_if=process_id_exists_command,
++        )
++
++    elif action == "stop":
++        wait_time = 5
++        daemon_kill_cmd = format("{sudo} kill {pid}")
++        daemon_hard_kill_cmd = format("{sudo} kill -9 {pid}")
++
++        # kill cmd
++        Execute(daemon_kill_cmd, not_if=format("! ({process_id_exists_command})"))
++
++        # kill -9 cmd
++        Execute(
++            daemon_hard_kill_cmd,
++            not_if=format(
++                "! ({process_id_exists_command}) || ( sleep {wait_time} && ! ({process_id_exists_command}) )"
++            ),
++            ignore_failures=True,
++        )
++
++        try:
++            # check if stopped the process, else fail the task
++            Execute(
++                format("! ({process_id_exists_command})"),
++                tries=20,
++                try_sleep=3,
++            )
++        except:
++            show_logs(params.impala_log_dir, params.impala_user)
++            raise
++
++        File(pid_file, action="delete")
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala-catalog.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala-catalog.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala-catalog.py
+new file mode 100644
+--- /dev/null	(date 1739322930240)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala-catalog.py	(date 1739322930240)
+@@ -0,0 +1,70 @@
++#!/usr/bin/env python
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++from resource_management import *
++from impala_service import impala_service
++from impala import impala
++
++
++class ImpalaCatalog(Script):
++    def install(self, env):
++        import params
++
++        self.install_packages(env)
++        self.configure(env)
++
++    def configure(self, env):
++        import params
++
++        env.set_params(params)
++        impala(name="catalogd")
++
++    def start(self, env, upgrade_type=None):
++        import params
++
++        env.set_params(params)
++        self.configure(env)
++        impala_service("catalogd", action="start", upgrade_type=upgrade_type)
++
++    def stop(self, env, upgrade_type=None):
++        import params
++
++        env.set_params(params)
++        impala_service("catalogd", action="stop", upgrade_type=upgrade_type)
++
++    def status(self, env):
++        import status_params
++
++        env.set_params(status_params)
++        check_process_status(status_params.impala_catalogd_pid)
++
++    def get_log_folder(self):
++      import params
++      return params.impala_log_dir
++
++    def get_user(self):
++      import params
++      return params.impala_user
++
++    def get_pid_files(self):
++        import status_params
++        return [status_params.impala_catalogd_pid]
++
++if __name__ == "__main__":
++    ImpalaCatalog().execute()
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala-statestore.py
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala-statestore.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala-statestore.py
+new file mode 100644
+--- /dev/null	(date 1739323118037)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala-statestore.py	(date 1739323118037)
+@@ -0,0 +1,68 @@
++#!/usr/bin/env python
++"""
++Licensed to the Apache Software Foundation (ASF) under one
++or more contributor license agreements.  See the NOTICE file
++distributed with this work for additional information
++regarding copyright ownership.  The ASF licenses this file
++to you under the Apache License, Version 2.0 (the
++"License"); you may not use this file except in compliance
++with the License.  You may obtain a copy of the License at
++
++    http://www.apache.org/licenses/LICENSE-2.0
++
++Unless required by applicable law or agreed to in writing, software
++distributed under the License is distributed on an "AS IS" BASIS,
++WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++See the License for the specific language governing permissions and
++limitations under the License.
++
++"""
++from resource_management import *
++from impala_service import impala_service
++from impala import impala
++
++
++class ImpalaStateStore(Script):
++    def install(self, env):
++        import params
++        self.install_packages(env)
++        self.configure(env)
++
++    def configure(self, env):
++        import params
++        env.set_params(params)
++        impala(name='statestored')
++
++    def start(self, env, upgrade_type=None):
++        import params
++
++        env.set_params(params)
++        self.configure(env)
++        impala_service("statestored", action="start", upgrade_type=upgrade_type)
++
++    def stop(self, env, upgrade_type=None):
++        import params
++
++        env.set_params(params)
++        impala_service("statestored", action="stop", upgrade_type=upgrade_type)
++
++    def status(self, env):
++        import status_params
++
++        env.set_params(status_params)
++        check_process_status(status_params.impala_statestored_pid)
++
++    def get_log_folder(self):
++      import params
++      return params.impala_log_dir
++
++    def get_user(self):
++      import params
++      return params.impala_user
++
++    def get_pid_files(self):
++        import status_params
++        return [status_params.impala_statestored_pid]
++
++if __name__ == "__main__":
++    ImpalaStateStore().execute()
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/properties/stack_packages.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/properties/stack_packages.json b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/properties/stack_packages.json
+--- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/properties/stack_packages.json	(revision 8d7eda1a8bd4d9119eeb66bbddb0c0c058a80c2d)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/properties/stack_packages.json	(date 1739325384843)
+@@ -816,6 +816,68 @@
+             "ozone-client"
+           ]
+         }
++      },
++      "IMPALA": {
++        "IMPALA": {
++          "STACK-SELECT-PACKAGE": "impala",
++          "INSTALL": [
++            "impala",
++            "impala-shell"
++          ],
++          "PATCH": [
++            "impala",
++            "impala-shell"
++          ],
++          "STANDARD": [
++            "impala",
++            "impala-shell"
++          ]
++        },
++        "IMPALA_CATALOG": {
++          "STACK-SELECT-PACKAGE": "impala",
++          "INSTALL": [
++            "impala",
++            "impala-shell"
++          ],
++          "PATCH": [
++            "impala",
++            "impala-shell"
++          ],
++          "STANDARD": [
++            "impala",
++            "impala-shell"
++          ]
++        },
++        "IMPALA_STATE_STORE": {
++          "STACK-SELECT-PACKAGE": "impala",
++          "INSTALL": [
++            "impala",
++            "impala-shell"
++          ],
++          "PATCH": [
++            "impala",
++            "impala-shell"
++          ],
++          "STANDARD": [
++            "impala",
++            "impala-shell"
++          ]
++        },
++        "IMPALA_DAEMON": {
++          "STACK-SELECT-PACKAGE": "impala",
++          "INSTALL": [
++            "impala",
++            "impala-shell"
++          ],
++          "PATCH": [
++            "impala",
++            "impala-shell"
++          ],
++          "STANDARD": [
++            "impala",
++            "impala-shell"
++          ]
++        }
+       }
+     },
+     "conf-select": {
+@@ -1014,6 +1076,13 @@
+           "current_dir": "{0}/current/ozone/conf",
+           "component": "ozone"
+         }
++      ],
++      "impala": [
++        {
++          "conf_dir": "/etc/impala/conf",
++          "current_dir": "{0}/current/impala/conf",
++          "component": "impala"
++        }
+       ]
+     },
+     "conf-select-patching": {
+@@ -1105,7 +1174,14 @@
+         ]
+       },
+       "OZONE": {
+-        "packages": ["ozone"]
++        "packages": [
++          "ozone"
++        ]
++      },
++      "IMPALA": {
++        "packages": [
++          "impala"
++        ]
+       }
+     },
+     "upgrade-dependencies": {
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/templates/impala.j2
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/templates/impala.j2 b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/templates/impala.j2
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/templates/impala.j2	(date 1735023255000)
+@@ -0,0 +1,62 @@
++IMPALA_CATALOG_SERVICE_HOST={{impala_catalog_host}}
++IMPALA_STATE_STORE_HOST={{impala_state_store_host}}
++IMPALA_STATE_STORE_PORT={{impala_env['impala_state_store_port']}}
++IMPALA_BACKEND_PORT={{impala_env['impala_backend_port']}}
++IMPALA_LOG_DIR={{impala_log_dir}}
++IMPALA_SCRATCH_DIR={{impala_env['impala_scratch_dir']}}
++MEM_LIMIT={{impala_env['mem_limit']}}
++
++IMPALA_CATALOG_ARGS=" \
++    -log_dir=${IMPALA_LOG_DIR} \
++    -state_store_host=${IMPALA_STATE_STORE_HOST} \
++    {% if enable_ranger %}
++    -server_name=cluster_impala \
++    -ranger_service_type=hive \
++    -ranger_app_id=impala \
++    -authorization_provider=ranger \
++    {% endif %}
++    {% if security_enabled %}
++    -kerberos_reinit_interval={{impala_env['kerberos_reinit_interval']}} \
++    -principal=impala/{{current_host_name}}@{{realm_name}} \
++    -keytab_file=/etc/security/keytabs/impala.service.keytab \
++    {% endif %}
++	"
++
++IMPALA_STATE_STORE_ARGS=" \
++    -log_dir=${IMPALA_LOG_DIR} \
++    -state_store_port=${IMPALA_STATE_STORE_PORT} \
++	{% if security_enabled %}
++    -kerberos_reinit_interval={{impala_env['kerberos_reinit_interval']}} \
++    -principal=impala/{{current_host_name}}@{{realm_name}} \
++    -keytab_file=/etc/security/keytabs/impala.service.keytab \
++	{% endif %}
++	"
++
++IMPALA_SERVER_ARGS=" \
++    -log_dir=${IMPALA_LOG_DIR} \
++	--scratch_dirs=${IMPALA_SCRATCH_DIR} \
++	-mem_limit=${MEM_LIMIT} \
++    -catalog_service_host=${IMPALA_CATALOG_SERVICE_HOST} \
++    -state_store_port=${IMPALA_STATE_STORE_PORT} \
++    -state_store_host=${IMPALA_STATE_STORE_HOST} \
++    -be_port=${IMPALA_BACKEND_PORT} \
++    {% if enable_ranger %}
++    -server_name=impala_cluster \
++    -ranger_service_type=hive \
++    -ranger_app_id=impala \
++    -authorization_provider=ranger \
++    {% endif %}
++    {% if kudu_master_host_num > 0 %}
++    -kudu_master_hosts={{kudu_master_hosts}} \
++    {% endif %}
++	{% if security_enabled %}
++    -kerberos_reinit_interval={{impala_env['kerberos_reinit_interval']}} \
++    -principal=impala/{{current_host_name}}@{{realm_name}} \
++    -keytab_file=/etc/security/keytabs/impala.service.keytab \
++	{% endif %}
++	"
++
++
++ENABLE_CORE_DUMPS=true
++LIBHDFS_OPTS=-Djava.library.path=/usr/lib/impala/lib
++
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/templates/startImpala.sh.j2
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/templates/startImpala.sh.j2 b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/templates/startImpala.sh.j2
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/templates/startImpala.sh.j2	(date 1735023255000)
+@@ -0,0 +1,119 @@
++#
++#
++# Licensed to the Apache Software Foundation (ASF) under one
++# or more contributor license agreements.  See the NOTICE file
++# distributed with this work for additional information
++# regarding copyright ownership.  The ASF licenses this file
++# to you under the Apache License, Version 2.0 (the
++# "License"); you may not use this file except in compliance
++# with the License.  You may obtain a copy of the License at
++#
++#   http://www.apache.org/licenses/LICENSE-2.0
++#
++# Unless required by applicable law or agreed to in writing,
++# software distributed under the License is distributed on an
++# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
++# KIND, either express or implied.  See the License for the
++# specific language governing permissions and limitations
++# under the License.
++#
++#
++
++
++#env
++source /etc/impala/conf/impala-env.sh
++
++cmdType=$1
++cmdArgs=''
++cmdResultRex=''
++cmdLog=''
++
++if [ $cmdType == 'catalogd' ]; then
++  cmdArgs=${IMPALA_CATALOG_ARGS}
++  cmdLog='catalogd.INFO'
++  cmdResultRex="CatalogService started on port"
++elif [ $cmdType == 'impalad' ]; then
++  cmdArgs=${IMPALA_SERVER_ARGS}
++  cmdLog='impalad.INFO'
++  cmdResultRex="Impala Beeswax Service listening on"
++elif [ $cmdType == 'statestored' ]; then
++  cmdArgs=${IMPALA_STATE_STORE_ARGS}
++  cmdLog='statestored.INFO'
++  cmdResultRex="ThriftServer 'StatestoreService' started on port"
++fi
++
++echo $cmdType
++echo $cmdArgs
++echo $cmdLog
++echo $cmdResultRex
++
++#logdir=/var/log/impala
++logdir={{impala_log_dir}}
++logfile=$logdir/impala-$cmdType.log
++loginfofile=$logdir/$cmdLog
++
++#pidfile=/var/run/impala/$cmdType.pid
++pidfile={{impala_pid_dir}}/$cmdType.pid
++
++#start cmd
++#/usr/hdp/current/impala/bin/$cmdType $cmdArgs > /var/log/impala/impala-$cmdType.log 2>&1 &
++{{impala_bin_home}}/$cmdType $cmdArgs > $logfile 2>&1 &
++
++#wrtite id
++pid=$!
++echo $pid | cat > $pidfile
++
++#just start cmd status
++while :
++  do
++    if cat $logfile | grep 'Redirecting stdout to' | grep ".$pid"  &> /dev/null
++    then
++      echo "start $cmdType, pls waiting "
++      break
++    fi
++    if !(ps -p $pid  &> /dev/null)
++    then
++      echo "start $cmdType, failed pls check log: $logfile"
++      rm -fr $pidfile
++      tail  $logfile
++      exit 1
++    fi
++ sleep 3
++done
++
++#just pid related log exists,becaust before cmd sometimes failed
++while :
++  do
++    if ( ls $logdir | grep "$cmdType" | grep ".$pid" &> /dev/null )
++    then
++      echo "start $cmdType, pls waiting ..."
++      break
++    fi
++ sleep 3
++done
++
++#just real cmd status
++while :
++  do
++    if cat $loginfofile | grep "$cmdResultRex" &> /dev/null
++    then
++      echo "start $cmdType success"
++      break
++    fi
++    if cat $loginfofile | grep "Impalad exiting" &> /dev/null
++    then
++      echo "start $cmdType failed,pls check log: $loginfofile"
++      rm -fr $pidfile
++      tail  $loginfofile
++      exit 1
++    fi
++    if !(ps -p $pid  &> /dev/null)
++    then
++      echo "start $cmdType failed, pls check log: $loginfofile"
++      rm -fr $pidfile
++      tail  $loginfofile
++      exit 1
++    fi
++ sleep 10
++done
++
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/templates/init_lib.sh.j2
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/templates/init_lib.sh.j2 b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/templates/init_lib.sh.j2
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/templates/init_lib.sh.j2	(date 1735023255000)
+@@ -0,0 +1,15 @@
++version=`bigtop-select status hadoop-client | sed 's/hadoop-client - \(.*\)/\1/' | tr -d '\r'`
++impala_path='/usr/bigtop/'${version}
++ln -sf  `echo -e $impala_path'/hadoop/lib/native/libhadoop.so /usr/lib/impala/lib/libhadoop.so' | tr -d '\r' | tr -d '?'`
++ln -sf  `echo -e $impala_path'/hadoop/lib/native/libhadoop.so.1.0.0 /usr/lib/impala/lib/libhadoop.so.1.0.0' | tr -d '\r' | tr -d '?'`
++ln -sf  `echo -e $impala_path'/usr/lib/libhdfs.so /usr/lib/impala/lib/libhdfs.so' | tr -d '\r' | tr -d '?'`
++ln -sf  `echo -e $impala_path'/usr/lib/libhdfs.so.0.0.0 /usr/lib/impala/lib/libhdfs.so.0.0.0' | tr -d '\r' | tr -d '?'`
++# add java-home
++# JAVA_HOME='/usr/jdk64/'`ls /usr/jdk64 | xargs echo`
++source /etc/profile
++EXPORT_JAVA_HOME='export JAVA_HOME='$JAVA_HOME
++x=`grep "$EXPORT_JAVA_HOME" /etc/default/bigtop-utils | wc -l`
++if [ $x = 0 ];
++then
++echo -e $EXPORT_JAVA_HOME |  tr -d '\r' >> /etc/default/bigtop-utils
++fi
+\ No newline at end of file
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/alerts.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/alerts.json b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/alerts.json
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/alerts.json	(date 1735023255000)
+@@ -0,0 +1,117 @@
++{
++  "IMPALA": {
++    "service": [
++      {
++        "name": "impala_daemon_process_percent",
++        "label": "Impala Daemon Process Available",
++        "description": "This alert is triggered if the number of down Impala Daemon in the cluster is greater than the configured critical threshold. It aggregates the results of Impala Daemon process checks.",
++        "interval": 1,
++        "scope": "SERVICE",
++        "enabled": true,
++        "source": {
++          "type": "AGGREGATE",
++          "alert_name": "impala_daemon_process",
++          "reporting": {
++            "ok": {
++              "text": "affected: [{1}], total: [{0}]"
++            },
++            "warning": {
++              "text": "affected: [{1}], total: [{0}]",
++              "value": 10
++            },
++            "critical": {
++              "text": "affected: [{1}], total: [{0}]",
++              "value": 30
++            },
++            "units": "%",
++            "type": "PERCENT"
++          }
++        }
++      }
++    ],
++    "IMPALA_STATE_STORE": [
++      {
++        "name": "impala_statestore_process",
++        "label": "Impala State Store Process",
++        "description": "This host-level alert is triggered if the individual Impala State Store cannot be established to be up and listening on the network.",
++        "interval": 1,
++        "scope": "HOST",
++        "enabled": true,
++        "source": {
++          "type": "PORT",
++          "uri": "{{impala_state_store_host}}",
++          "default_port": 24000,
++          "reporting": {
++            "ok": {
++              "text": "TCP OK - {0:.3f}s response on port {1}"
++            },
++            "warning": {
++              "text": "TCP OK - {0:.3f}s response on port {1}",
++              "value": 1.5
++            },
++            "critical": {
++              "text": "Connection failed: {0} to {1}:{2}",
++              "value": 5.0
++            }
++          }
++        }
++      }
++    ],
++    "IMPALA_CATALOG": [
++      {
++        "name": "impala_catalog_process",
++        "label": "Impala Catalog Process",
++        "description": "This host-level alert is triggered if the individual Impala Catalog cannot be established to be up and listening on the network.",
++        "interval": 1,
++        "scope": "HOST",
++        "enabled": true,
++        "source": {
++          "type": "PORT",
++          "uri": "{{impala_catalog_host}}",
++          "default_port": "26000",
++          "reporting": {
++            "ok": {
++              "text": "TCP OK - {0:.3f}s response on port {1}"
++            },
++            "warning": {
++              "text": "TCP OK - {0:.3f}s response on port {1}",
++              "value": 1.5
++            },
++            "critical": {
++              "text": "Connection failed: {0} to {1}:{2}",
++              "value": 5.0
++            }
++          }
++        }
++      }
++    ],
++    "IMPALA_DAEMON": [
++      {
++        "name": "impala_daemon_process",
++        "label": "Impala Daemon Process",
++        "description": "This host-level alert is triggered if the individual Impala Daemon processes cannot be established to be up and listening on the network.",
++        "interval": 1,
++        "scope": "HOST",
++        "enabled": true,
++        "source": {
++          "type": "PORT",
++          "uri": "0.0.0.0",
++          "default_port": 21000,
++          "reporting": {
++            "ok": {
++              "text": "TCP OK - {0:.3f}s response on port {1}"
++            },
++            "warning": {
++              "text": "TCP OK - {0:.3f}s response on port {1}",
++              "value": 1.5
++            },
++            "critical": {
++              "text": "Connection failed: {0} to {1}:{2}",
++              "value": 5.0
++            }
++          }
++        }
++      }
++    ]
++  }
++}
+\ No newline at end of file
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/quicklinks/quicklinks.json
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/quicklinks/quicklinks.json b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/quicklinks/quicklinks.json
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/quicklinks/quicklinks.json	(date 1735023255000)
+@@ -0,0 +1,41 @@
++{
++  "name": "default",
++  "description": "default quick links configuration",
++  "configuration": {
++    "protocol": {
++      "type": "HTTP_ONLY"
++    },
++    "links": [
++      {
++        "name": "impala catalog web ui",
++        "label": "Impala Catalog Web UI",
++        "component_name": "IMPALA_CATALOG",
++        "requires_user_name": "false",
++        "url": "%@://%@:%@",
++        "port": {
++          "http_property": "webserver_port",
++          "http_default_port": "25020",
++          "https_property": "webserver_port",
++          "https_default_port": "25020",
++          "regex": "^(\\d+)$",
++          "site": "impala-catalog-env"
++        }
++      },
++      {
++        "name": "impala statestore web ui",
++        "label": "Impala StateStore WEB UI",
++        "component_name": "IMPALA_STATE_STORE",
++        "requires_user_name": "false",
++        "url": "%@://%@:%@",
++        "port": {
++          "http_property": "webserver_port",
++          "http_default_port": "25010",
++          "https_property": "webserver_port",
++          "https_default_port": "25010",
++          "regex": "^(\\d+)$",
++          "site": "impala-statestore-env"
++        }
++      }
++    ]
++  }
++}
+\ No newline at end of file
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/metainfo.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/metainfo.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/metainfo.xml
+new file mode 100644
+--- /dev/null	(date 1739325510245)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/metainfo.xml	(date 1739325510245)
+@@ -0,0 +1,92 @@
++<?xml version="1.0"?>
++
++<metainfo>
++    <schemaVersion>2.0</schemaVersion>
++    <services>
++        <service>
++            <name>IMPALA</name>
++            <displayName>Impala</displayName>
++            <comment>Component IMPALA Integrated By JaneTTR . For commercial use, please contact mail: 3832514048@qq.com</comment>
++            <version>4.4.1</version>
++            <enabled>false</enabled>
++            <components>
++                <component>
++                    <name>IMPALA_STATE_STORE</name>
++                    <displayName>Impala StateStore</displayName>
++                    <category>MASTER</category>
++                    <cardinality>1</cardinality>
++                    <commandScript>
++                        <script>scripts/impala-statestore.py</script>
++                        <scriptType>PYTHON</scriptType>
++                        <timeout>10000</timeout>
++                    </commandScript>
++                </component>
++                <component>
++                    <name>IMPALA_CATALOG</name>
++                    <displayName>Impala Catalog</displayName>
++                    <category>MASTER</category>
++                    <cardinality>1</cardinality>
++                    <commandScript>
++                        <script>scripts/impala-catalog.py</script>
++                        <scriptType>PYTHON</scriptType>
++                        <timeout>10000</timeout>
++                    </commandScript>
++                </component>
++                <component>
++                    <name>IMPALA_DAEMON</name>
++                    <displayName>Impala Daemon</displayName>
++                    <category>SLAVE</category>
++                    <cardinality>1+</cardinality>
++                    <dependencies>
++                       <dependency>
++                         <name>HDFS/HDFS_CLIENT</name>
++                         <scope>host</scope>
++                         <auto-deploy>
++                           <enabled>true</enabled>
++                         </auto-deploy>
++                       </dependency>
++                    </dependencies>
++                    <commandScript>
++                        <script>scripts/impala-daemon.py</script>
++                        <scriptType>PYTHON</scriptType>
++                        <timeout>10000</timeout>
++                    </commandScript>
++                </component>
++            </components>
++            <osSpecifics>
++                <osSpecific>
++                    <osFamily>any</osFamily>
++                    <packages>
++                        <package>
++                            <name>impala_${stack_version}</name>
++                        </package>
++                        <package>
++                            <name>impala_${stack_version}-shell</name>
++                        </package>
++                    </packages>
++                </osSpecific>
++            </osSpecifics>
++            <requiredServices>
++                <service>HDFS</service>
++                <service>HIVE</service>
++            </requiredServices>
++
++            <configuration-dependencies>
++                <config-type>impala-env</config-type>
++                <config-type>fair-scheduler</config-type>
++                <config-type>llama-site</config-type>
++                <config-type>core-site</config-type>
++                <config-type>hdfs-site</config-type>
++                <config-type>hive-site</config-type>
++            </configuration-dependencies>
++
++            <quickLinksConfigurations>
++                <quickLinksConfiguration>
++                    <fileName>quicklinks.json</fileName>
++                    <default>true</default>
++                </quickLinksConfiguration>
++            </quickLinksConfigurations>
++            <restartRequiredAfterChange>true</restartRequiredAfterChange>
++        </service>
++    </services>
++</metainfo>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/configuration/impala-env.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/configuration/impala-env.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/configuration/impala-env.xml
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/configuration/impala-env.xml	(date 1735023255000)
+@@ -0,0 +1,294 @@
++<?xml version="1.0"?>
++<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
++
++<configuration supports_adding_forbidden="true">
++    <property>
++        <name>impala_log_dir</name>
++        <value>/var/log/impala</value>
++        <description>impala Log Dir</description>
++        <display-name>impala Log Dir</display-name>
++        <value-attributes>
++            <type>directory</type>
++            <overridable>false</overridable>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++    <property>
++        <name>impala_pid_dir</name>
++        <value>/var/run/impala</value>
++        <display-name>impala PID Dir</display-name>
++        <description>impala PID Dir</description>
++        <value-attributes>
++            <type>directory</type>
++            <overridable>false</overridable>
++            <editable-only-at-install>true</editable-only-at-install>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++    <property>
++        <name>impala_root_logger</name>
++        <value>INFO,RFA</value>
++        <display-name>impala Root Logger</display-name>
++        <description>impala Root Logger</description>
++        <value-attributes>
++            <overridable>false</overridable>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++    <property>
++        <name>impala_user</name>
++        <display-name>impala User</display-name>
++        <value>impala</value>
++        <property-type>USER</property-type>
++        <description>User to run impala as</description>
++        <value-attributes>
++            <type>user</type>
++            <overridable>false</overridable>
++            <user-groups>
++                <property>
++                    <type>cluster-env</type>
++                    <name>user_group</name>
++                </property>
++            </user-groups>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++    <property>
++        <name>impala_principal_name</name>
++        <display-name>impala principal name</display-name>
++        <description>impala principal name</description>
++        <property-type>KERBEROS_PRINCIPAL</property-type>
++        <on-ambari-upgrade add="false"/>
++    </property>
++    <property>
++        <name>impala_user_keytab</name>
++        <description>impala keytab path</description>
++        <on-ambari-upgrade add="false"/>
++    </property>
++
++    <property>
++        <name>enable_ranger</name>
++        <value>false</value>
++        <description>disable or enable ranger</description>
++    </property>
++    <property>
++        <name>ranger_service_name</name>
++        <value>impala_cluster</value>
++        <description>ranger_plugin_hive_service_name</description>
++    </property>
++    <property>
++        <name>impala_scratch_dir</name>
++        <value>/tmp/impala_scratch</value>
++        <description>impala scratch dir</description>
++    </property>
++    <property>
++        <name>impala_state_store_port</name>
++        <value>24000</value>
++        <description>IMPALA_STATE_STORE_PORT</description>
++    </property>
++    <property>
++        <name>impala_backend_port</name>
++        <value>22000</value>
++        <description>IMPALA_BACKEND_PORT</description>
++    </property>
++    <property>
++        <name>kerberos_reinit_interval</name>
++        <value>60</value>
++        <description>kerberos_reinit_interval</description>
++    </property>
++    <property>
++        <name>mem_limit</name>
++        <value>2gb</value>
++        <description>memory limit . etc 70%,10mb,10gb,10tb</description>
++    </property>
++    <property>
++        <name>impala_state_store_kerberos_principal</name>
++        <value>impala/_HOST@EXAMPLE.COM</value>
++        <property-type>KERBEROS_PRINCIPAL</property-type>
++        <value-attributes>
++          <empty-value-valid>true</empty-value-valid>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++    <property>
++       <name>impala_state_store_kerberos_keytab_file</name>
++       <value>/etc/security/keytabs/impala.service.keytab</value>
++       <description>The path to the Kerberos Keytab file containing the Impala Statesore server's service principal.</description>
++       <on-ambari-upgrade add="true"/>
++    </property>
++    <property>
++        <name>impala_state_store_http_kerberos_principal</name>
++        <value>HTTP/_HOST@EXAMPLE.COM</value>
++        <property-type>KERBEROS_PRINCIPAL</property-type>
++        <value-attributes>
++          <empty-value-valid>true</empty-value-valid>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++    <property>
++       <name>impala_state_store_http_kerberos_keytab_file</name>
++       <value>/etc/security/keytabs/spnego.service.keytab</value>
++       <description>The path to the Kerberos Keytab file containing the Impala Statesore server's service principal.</description>
++       <on-ambari-upgrade add="true"/>
++    </property>
++
++    <property>
++        <name>impala_catalog_kerberos_principal</name>
++        <value>impala/_HOST@EXAMPLE.COM</value>
++        <property-type>KERBEROS_PRINCIPAL</property-type>
++        <value-attributes>
++          <empty-value-valid>true</empty-value-valid>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++    <property>
++       <name>impala_catalog_kerberos_keytab_file</name>
++       <value>/etc/security/keytabs/impala.service.keytab</value>
++       <description>The path to the Kerberos Keytab file containing the Impala Catalog server's service principal.</description>
++       <on-ambari-upgrade add="true"/>
++    </property>
++    <property>
++        <name>impala_catalog_http_kerberos_principal</name>
++        <value>HTTP/_HOST@EXAMPLE.COM</value>
++        <property-type>KERBEROS_PRINCIPAL</property-type>
++        <value-attributes>
++          <empty-value-valid>true</empty-value-valid>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++    <property>
++       <name>impala_catalog_http_kerberos_keytab_file</name>
++       <value>/etc/security/keytabs/spnego.service.keytab</value>
++       <description>The path to the Kerberos Keytab file containing the Impala Catalog server's service principal.</description>
++       <on-ambari-upgrade add="true"/>
++    </property>
++
++    <property>
++        <name>impala_daemon_kerberos_principal</name>
++        <value>impala/_HOST@EXAMPLE.COM</value>
++        <property-type>KERBEROS_PRINCIPAL</property-type>
++        <value-attributes>
++          <empty-value-valid>true</empty-value-valid>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++    <property>
++       <name>impala_daemo_kerberos_keytab_file</name>
++       <value>/etc/security/keytabs/impala.service.keytab</value>
++       <description>The path to the Kerberos Keytab file containing the Impala Catalog server's service principal.</description>
++       <on-ambari-upgrade add="true"/>
++    </property>
++    <property>
++        <name>impala_daemo_http_kerberos_principal</name>
++        <value>HTTP/_HOST@EXAMPLE.COM</value>
++        <property-type>KERBEROS_PRINCIPAL</property-type>
++        <value-attributes>
++          <empty-value-valid>true</empty-value-valid>
++        </value-attributes>
++        <on-ambari-upgrade add="true"/>
++    </property>
++    <property>
++       <name>impala_daemo_http_kerberos_keytab_file</name>
++       <value>/etc/security/keytabs/spnego.service.keytab</value>
++       <description>The path to the Kerberos Keytab file containing the Impala Catalog server's service principal.</description>
++       <on-ambari-upgrade add="true"/>
++    </property>
++  <property>
++    <name>impala_principal_name</name>
++    <description>Impala principal name</description>
++    <property-type>KERBEROS_PRINCIPAL</property-type>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>impala_user_keytab</name>
++    <description>Impala keytab path</description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>impala_http_policy</name>
++    <value>HTTP_ONLY</value>
++    <description>The following values are supported:
++      - HTTP_ONLY : Service is provided only on http
++      - HTTPS_ONLY : Service is provided only on https
++      - HTTP_AND_HTTPS : Service is provided both on http and https. </description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <!-- /etc/impala/conf -->
++  <property>
++    <name>content</name>
++    <display-name>impala-env template</display-name>
++    <description>This is the jinja template for impala-env.sh file</description>
++    <value>
++
++IMPALA_CATALOG_SERVICE_HOST={{impala_catalog_host}}
++IMPALA_STATE_STORE_HOST={{impala_state_store_host}}
++IMPALA_STATE_STORE_PORT={{impala_env['impala_state_store_port']}}
++IMPALA_BACKEND_PORT={{impala_env['impala_backend_port']}}
++IMPALA_LOG_DIR={{impala_log_dir}}
++IMPALA_SCRATCH_DIR={{impala_env['impala_scratch_dir']}}
++MEM_LIMIT={{impala_env['mem_limit']}}
++
++export IMPALA_CATALOG_ARGS=" \
++    -log_dir=${IMPALA_LOG_DIR} \
++    -state_store_host=${IMPALA_STATE_STORE_HOST} \
++    {% if enable_ranger %}
++    -server_name=impala_cluster  \
++    -ranger_service_type=hive \
++    -ranger_app_id=impala \
++    -authorization_provider=ranger \
++    {% endif %}
++    {% if security_enabled %}
++    -kerberos_reinit_interval={{impala_env['kerberos_reinit_interval']}} \
++    -principal={{impala_env['impala_catalog_kerberos_principal']}} \
++    -keytab_file={{impala_env['impala_catalog_kerberos_keytab_file']}} \
++    -load_auth_to_local_rules=true \
++    {% endif %}
++	"
++
++export IMPALA_STATE_STORE_ARGS=" \
++    -log_dir=${IMPALA_LOG_DIR} \
++    -state_store_port=${IMPALA_STATE_STORE_PORT} \
++	{% if security_enabled %}
++    -kerberos_reinit_interval={{impala_env['kerberos_reinit_interval']}} \
++    -principal={{impala_env['impala_state_store_kerberos_principal']}} \
++    -keytab_file={{impala_env['impala_state_store_kerberos_keytab_file']}} \
++    -load_auth_to_local_rules=true \
++	{% endif %}
++	"
++
++export IMPALA_SERVER_ARGS=" \
++    -log_dir=${IMPALA_LOG_DIR} \
++	--scratch_dirs=${IMPALA_SCRATCH_DIR} \
++	--authorized_proxy_user_config=hue=* \
++	-mem_limit=${MEM_LIMIT} \
++    -catalog_service_host=${IMPALA_CATALOG_SERVICE_HOST} \
++    -state_store_port=${IMPALA_STATE_STORE_PORT} \
++    -state_store_host=${IMPALA_STATE_STORE_HOST} \
++    -be_port=${IMPALA_BACKEND_PORT} \
++    {% if enable_ranger %}
++    -server_name=impala_cluster  \
++    -ranger_service_type=hive \
++    -ranger_app_id=impala \
++    -authorization_provider=ranger \
++    {% endif %}
++    {% if kudu_master_host_num > 0 %}
++    -kudu_master_hosts={{kudu_master_hosts}} \
++    {% endif %}
++	{% if security_enabled %}
++    -kerberos_reinit_interval={{impala_env['kerberos_reinit_interval']}} \
++    -principal={{impala_env['impala_daemon_kerberos_principal']}} \
++    -keytab_file={{impala_env['impala_daemo_kerberos_keytab_file']}} \
++    -load_auth_to_local_rules=true \
++	{% endif %}
++	"
++
++export ENABLE_CORE_DUMPS=true
++export LIBHDFS_OPTS=-Djava.library.path=/usr/bigtop/current/impala/lib
++
++    </value>
++    <value-attributes>
++      <type>content</type>
++    </value-attributes>
++    <on-ambari-upgrade add="true"/>
++  </property>
++</configuration>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/configuration/fair-scheduler.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/configuration/fair-scheduler.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/configuration/fair-scheduler.xml
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/configuration/fair-scheduler.xml	(date 1735023255000)
+@@ -0,0 +1,41 @@
++<?xml version="1.0"?>
++<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
++
++<configuration supports_adding_forbidden="true">
++
++  <!-- /etc/impala/conf -->
++  <property>
++    <name>content</name>
++    <display-name>fair-scheduler.xml template</display-name>
++    <description>This is the xml template for fair-scheduler.xml file</description>
++    <value>
++<![CDATA[
++<allocations>
++    <queue name="root">
++        <aclSubmitApps> </aclSubmitApps>
++        <queue name="default">
++            <maxResources>50000 mb, 0 vcores</maxResources>
++            <aclSubmitApps>*</aclSubmitApps>
++        </queue>
++        <queue name="development">
++            <maxResources>200000 mb, 0 vcores</maxResources>
++            <aclSubmitApps>user1,user2 dev,ops,admin</aclSubmitApps>
++        </queue>
++        <queue name="production">
++            <maxResources>1000000 mb, 0 vcores</maxResources>
++            <aclSubmitApps> ops,admin</aclSubmitApps>
++        </queue>
++    </queue>
++    <queuePlacementPolicy>
++        <rule name="specified" create="false"/>
++        <rule name="default" />
++    </queuePlacementPolicy>
++</allocations>
++]]>
++    </value>
++    <value-attributes>
++      <type>content</type>
++    </value-attributes>
++    <on-ambari-upgrade add="true"/>
++  </property>
++</configuration>
+Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/configuration/llama-site.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/configuration/llama-site.xml b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/configuration/llama-site.xml
+new file mode 100644
+--- /dev/null	(date 1735023255000)
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/configuration/llama-site.xml	(date 1735023255000)
+@@ -0,0 +1,94 @@
++<?xml version="1.0"?>
++<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
++<!--
++   Licensed to the Apache Software Foundation (ASF) under one or more
++   contributor license agreements.  See the NOTICE file distributed with
++   this work for additional information regarding copyright ownership.
++   The ASF licenses this file to You under the Apache License, Version 2.0
++   (the "License"); you may not use this file except in compliance with
++   the License.  You may obtain a copy of the License at
++
++       http://www.apache.org/licenses/LICENSE-2.0
++
++   Unless required by applicable law or agreed to in writing, software
++   distributed under the License is distributed on an "AS IS" BASIS,
++   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++   See the License for the specific language governing permissions and
++   limitations under the License.
++-->
++<!-- Put site-specific property overrides in this file. -->
++<configuration xmlns:xi="http://www.w3.org/2001/XInclude" supports_final="true">
++  <!-- ResourceManager -->
++  <property>
++    <name>llama.am.throttling.maximum.placed.reservations.root.default</name>
++    <value>10</value>
++    <description></description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>llama.am.throttling.maximum.queued.reservations.root.default</name>
++    <value>50</value>
++    <description></description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>impala.admission-control.pool-default-query-options.root.default</name>
++    <value>mem_limit=128m,query_timeout_s=20,max_io_buffers=10</value>
++    <description></description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>impala.admission-control.pool-queue-timeout-ms.root.default</name>
++    <value>30000</value>
++    <description></description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>llama.am.throttling.maximum.placed.reservations.root.development</name>
++    <value>50</value>
++    <description></description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>llama.am.throttling.maximum.queued.reservations.root.development</name>
++    <value>100</value>
++    <description></description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>impala.admission-control.pool-default-query-options.root.development</name>
++    <value>mem_limit=256m,query_timeout_s=30,max_io_buffers=10</value>
++    <description></description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>impala.admission-control.pool-queue-timeout-ms.root.development</name>
++    <value>15000</value>
++    <description></description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>llama.am.throttling.maximum.placed.reservations.root.production</name>
++    <value>100</value>
++    <description></description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>llama.am.throttling.maximum.queued.reservations.root.production</name>
++    <value>200</value>
++    <description></description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>impala.admission-control.pool-default-query-options.root.production</name>
++    <value>mem_limit=386m,query_timeout_s=30,max_io_buffers=10</value>
++    <description></description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++  <property>
++    <name>impala.admission-control.pool-queue-timeout-ms.root.production</name>
++    <value>30000</value>
++    <description></description>
++    <on-ambari-upgrade add="false"/>
++  </property>
++</configuration>

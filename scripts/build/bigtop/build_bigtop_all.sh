@@ -99,7 +99,7 @@ ALL_COMPONENTS=(
 gradle "${ALL_COMPONENTS[@]}" \
   -PparentDir=/usr/bigtop \
   -Dbuildwithdeps=true \
-  -PpkgSuffix
+  -PpkgSuffix -d
 
 
 # 遍历 output 目录下的每个子目录

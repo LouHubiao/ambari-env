@@ -66,6 +66,7 @@ patch_files=(
   "/scripts/build/bigtop/patch1_0_5/patch3-BOM-COMPONENT-ADD.diff"
   "/scripts/build/bigtop/patch1_0_5/patch4-BOM-COMPONENT-ADD.diff"
   "/scripts/build/bigtop/patch1_0_5/patch5-BOM-COMPONENT-ADD.diff"
+  "/scripts/build/bigtop/patch1_0_5/patch6-BOM-GHPROXY-FIXED.diff"
 )
 RPM_PACKAGE="/data/rpm-package/bigtop"
 

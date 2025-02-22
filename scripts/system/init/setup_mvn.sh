@@ -60,9 +60,9 @@ configure_maven_home() {
     echo "export MAVEN_HOME=${MAVEN_HOME_PATH}" | sudo tee -a /etc/profile
   fi
 
-  # 更新 PATH 变量以包含 MAVEN_HOME/bin
+  # 更新 PATH 变量，将 MAVEN_HOME/bin 放在前面
   if ! grep -q "^export PATH=.*\$MAVEN_HOME/bin" /etc/profile; then
-    echo "export PATH=\$PATH:\$MAVEN_HOME/bin" | sudo tee -a /etc/profile
+    echo "export PATH=\$MAVEN_HOME/bin:\$PATH" | sudo tee -a /etc/profile
   fi
 
   # 重新加载 /etc/profile 文件以应用更改
@@ -71,6 +71,7 @@ configure_maven_home() {
   # 验证 MAVEN_HOME 设置
   echo "MAVEN_HOME is set to: $MAVEN_HOME"
 }
+
 
 # 检查并下载 Maven 文件
 check_and_download_maven() {

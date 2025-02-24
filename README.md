@@ -39,10 +39,8 @@
 🎉 **我们的版本已支持 Doris2.1.7** 🎉  
 欢迎大家下载安装并体验！🎯
 
-![img.png](.docs/img_6.png)
-![img.png](.docs/img_13.png)
-![img.png](.docs/img_14.png)
 ![img.png](.docs/img_15.png)
+![img.png](.docs/img_20.png)
 
 🚀 **限时优惠**：现在关注我们的微信公众号，还可以限时领取**知识星球优惠券** 🎁，抓紧机会，福利多多，等你来拿！  
 扫码关注，获取更多技术干货与独家优惠👇：

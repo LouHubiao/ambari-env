@@ -1,4 +1,4 @@
-Subject: [PATCH] feauture: 集成 impala 4.4.1
+Subject: [PATCH] feauture: impala 4.4.1 集成
 ---
 Index: ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/IMPALA/package/scripts/impala-statestore.py
 IDEA additional info:
@@ -1687,8 +1687,8 @@ Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
 ===================================================================
 diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/stack_advisor.py b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/stack_advisor.py
 --- a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/stack_advisor.py	(revision 8d7eda1a8bd4d9119eeb66bbddb0c0c058a80c2d)
-+++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/stack_advisor.py	(date 1740192729567)
-@@ -275,10 +275,33 @@
++++ b/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/stack_advisor.py	(date 1740290697833)
+@@ -275,10 +275,32 @@
      if "SPARK2" in servicesList:
        livyUser = None
        if "livy2-env" in services["configurations"] and "livy_user" in services["configurations"]["livy2-env"]["properties"]:
@@ -1703,22 +1703,21 @@ diff --git a/ambari-server/src/main/resources/stacks/BIGTOP/3.2.0/services/stack
 +            "properties"]:
 +            impala_user = services["configurations"]["impala-env"]["properties"]["impala_user"]
 +
-+            if impala_user is not None:
-+                impalaHosts = self.getHostsWithComponent("IMPALA", "IMPALA_SERVER", services, hosts)
++            if impala_user:
++                impalaHosts = self.getHostsWithComponent("IMPALA", "IMPALA_CATALOG", services, hosts) or []
 +
-+                if impalaHosts is not None:
-+                    impalaHostNameList = []
-+                    for impalaHost in impalaHosts:
-+                        impalaHostNameList.append(impalaHost["Hosts"]["host_name"])
-+                    impalaHostNames = ",".join(impalaHostNameList)
++                if impalaHosts:
++                    impalaHostNames = ",".join([impalaHost["Hosts"]["host_name"] for impalaHost in impalaHosts])
++                else:
++                    impalaHostNames = "*"
 +
-+                    if impala_user not in users:
-+                        users[impala_user] = {
-+                            "propertyHosts": impalaHostNames,
-+                            "propertyGroups": "*",
-+                            "config": "impala-env",
-+                            "propertyName": "impala_user"
-+                        }
++                if impala_user not in users:
++                    users[impala_user] = {
++                        "propertyHosts": impalaHostNames,
++                        "propertyGroups": "*",
++                        "config": "impala-env",
++                        "propertyName": "impala_user"
++                    }
 +
      putCoreSiteProperty = self.putProperty(configurations, "core-site", services)
      putCoreSitePropertyAttribute = self.putPropertyAttribute(configurations, "core-site")

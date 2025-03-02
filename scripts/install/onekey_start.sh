@@ -25,8 +25,6 @@ source /scripts/install/ssh/install_no_pass.sh
 
 source /scripts/install/ssh/install_ntp_sync.sh
 
-source /scripts/install/ssh/install_yum_repo.sh
-
 source /scripts/install/ssh/install_mariadb.sh
 
 source /scripts/install/ambari/install_ambari.sh

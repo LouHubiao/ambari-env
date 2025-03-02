@@ -46,10 +46,10 @@ source /scripts/system/init/setup_build_env.sh
 source /scripts/system/init/setup_virtual_env.sh
 
 #处理r环境
-source /scripts/system/init/setup_r_env.sh
+# source /scripts/system/init/setup_r_env.sh
 
 # 将本机ip写入到
-source /scripts/util/write_ip.sh
+source /scripts/util/write_ip.sh /scripts/.init_done
 
 # start sshd server
 /usr/sbin/sshd -D

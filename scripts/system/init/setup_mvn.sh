@@ -21,10 +21,10 @@ set -ex
 ###########MAVEN_INIT start
 echo "############## SETUP MAVEN_INIT start #############"
 # Maven path and URL
-MAVEN_VERSION="3.8.4"
+MAVEN_VERSION="3.8.8"
 MAVEN_FILE_PATH="/opt/modules/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
 MAVEN_HOME_PATH="/opt/modules/apache-maven-${MAVEN_VERSION}"
-MAVEN_DOWNLOAD_URL="https://repo.huaweicloud.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
+MAVEN_DOWNLOAD_URL="https://mirrors.aliyun.com/apache/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz"
 MAVEN_FILE_PATH_LOCK="/scripts/.setup_maven.lock"
 TAR_LOCK="/scripts/.setup_maven_tar.lock"
 

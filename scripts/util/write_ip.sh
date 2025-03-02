@@ -18,6 +18,8 @@
 
 set -ex
 
+INIT_FILE="$1"
+
 # 获取主机名
 HOST_NAME=$(hostname)
 
@@ -28,7 +30,7 @@ IP_ADDRESS=$(cat /etc/hosts | grep -v '^#' | grep -v '127.0.0.1' | grep -E '^[0-
 CONTENT="${HOST_NAME}@${IP_ADDRESS}"
 
 # 检查文件中是否已经存在相同的内容
-if ! grep -Fxq "$CONTENT" /scripts/.init_done; then
+if ! grep -Fxq "$CONTENT" "$INIT_FILE"; then
     # 如果不存在，则追加到文件
-    echo "$CONTENT" >> /scripts/.init_done
+    echo "$CONTENT" >> "$INIT_FILE"
 fi

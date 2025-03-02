@@ -21,10 +21,10 @@ set -ex
 echo "############## SETUP GRADLE_INIT start #############"
 
 # Gradle version and paths
-GRADLE_VERSION="5.6.4"
+GRADLE_VERSION="5.6.2"
 GRADLE_FILE_PATH="/opt/modules/gradle-${GRADLE_VERSION}-bin.zip"
 GRADLE_HOME_PATH="/opt/modules/gradle-${GRADLE_VERSION}"
-GRADLE_DOWNLOAD_URL="https://mirrors.huaweicloud.com/gradle/gradle-${GRADLE_VERSION}-bin.zip"
+GRADLE_DOWNLOAD_URL="https://mirrors.aliyun.com/gradle/gradle-${GRADLE_VERSION}-bin.zip"
 GRADLE_FILE_PATH_LOCK="/scripts/.setup_gradle.lock"
 ZIP_LOCK="/scripts/.setup_gradle_zip.lock"
 

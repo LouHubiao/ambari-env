@@ -2,3 +2,6 @@
 /scripts/extend/system/*
 
 /scripts/extend/
+/common/data/
+/scripts/var
+/scripts/hadoop

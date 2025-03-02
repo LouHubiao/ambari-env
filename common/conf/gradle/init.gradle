@@ -1,13 +1,21 @@
 allprojects {
-    repositories {
-        def REPOSITORY_URL = 'http://172.20.0.2:8081/repository/maven-public/'
-        // 配置自定义仓库
-        maven {
-            url REPOSITORY_URL
-            credentials {
-                username="admin"
-                password="admin123"
-            }
-        }
+  repositories {
+    maven {
+      url 'https://maven.aliyun.com/repository/public/'
     }
+    maven {
+      url 'https://maven.aliyun.com/repository/central'
+    }
+    maven {
+      url 'https://maven.aliyun.com/repository/spring'
+    }
+    maven {
+      url 'https://maven.aliyun.com/repository/spring-plugin'
+    }
+    maven {
+      url 'https://maven.aliyun.com/repository/apache-snapshots'
+    }
+    mavenLocal()
+    mavenCentral()
+  }
 }

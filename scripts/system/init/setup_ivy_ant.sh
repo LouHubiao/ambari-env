@@ -21,12 +21,12 @@ set -e
 echo "############## SETUP ANT_IVY start #############"
 
 # 定义变量
-ANT_URL="https://mirrors.huaweicloud.com/apache//ant/binaries/apache-ant-1.10.12-bin.tar.gz"
-IVY_URL="https://mirrors.huaweicloud.com/apache//ant/ivy/2.5.0/apache-ivy-2.5.0-bin.tar.gz"
-ANT_TAR="/opt/modules/apache-ant-1.10.12-bin.tar.gz"
-IVY_TAR="/opt/modules/apache-ivy-2.5.0-bin.tar.gz"
-ANT_DIR="/opt/modules/apache-ant-1.10.12"
-IVY_DIR="/opt/modules/apache-ivy-2.5.0"
+ANT_URL="https://mirrors.aliyun.com/apache/ant/binaries/apache-ant-1.10.14-bin.tar.gz"
+IVY_URL="https://mirrors.aliyun.com/apache/ant/ivy/2.5.2/apache-ivy-2.5.2-bin.tar.gz"
+ANT_TAR="/opt/modules/apache-ant-1.10.14-bin.tar.gz"
+IVY_TAR="/opt/modules/apache-ivy-2.5.2-bin.tar.gz"
+ANT_DIR="/opt/modules/apache-ant-1.10.14"
+IVY_DIR="/opt/modules/apache-ivy-2.5.2"
 
 # 创建安装目录
 sudo mkdir -p /opt/modules

@@ -89,7 +89,6 @@ verify_nginx() {
 
 # 主函数
 main() {
-    install_yum
     install_packages
     update_repo_metadata
     configure_nginx

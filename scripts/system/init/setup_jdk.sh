@@ -108,11 +108,11 @@ check_and_download_jdk() {
 
 # 添加并配置 update-alternatives
 configure_update_alternatives() {
-    sudo update-alternatives --install /usr/bin/java java ${JDK_FILE_HOME_PATH}/bin/java 2
-    sudo update-alternatives --install /usr/bin/javac javac ${JDK_FILE_HOME_PATH}/bin/javac 2
+    update-alternatives --install /usr/bin/java java ${JDK_FILE_HOME_PATH}/bin/java 2
+    update-alternatives --install /usr/bin/javac javac ${JDK_FILE_HOME_PATH}/bin/javac 2
 
-    sudo update-alternatives --set java ${JDK_FILE_HOME_PATH}/bin/java
-    sudo update-alternatives --set javac ${JDK_FILE_HOME_PATH}/bin/javac
+    update-alternatives --set java ${JDK_FILE_HOME_PATH}/bin/java
+    update-alternatives --set javac ${JDK_FILE_HOME_PATH}/bin/javac
 
     # 验证 Java 版本
     java -version

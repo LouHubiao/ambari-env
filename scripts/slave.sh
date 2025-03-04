@@ -16,10 +16,13 @@
 #
 # Author: JaneTTR
 
-set -ex
+set -e
 
 # init env
 source /scripts/system/init/init_env.sh
+
+# setup git
+yum install -y git
 
 # setup jdk
 source /scripts/system/init/setup_jdk.sh

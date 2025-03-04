@@ -16,10 +16,12 @@
 #
 # Author: JaneTTR
 
-set -ex
+set -e
 echo "############## INIT YUM start #############"
 FLAG_FILE="/var/lib/init/.lock"
 mkdir -p /var/lib/init
+
+IS_NGINX="$1"
 
 FILE_PATH="/scripts/.init_nginx_done" # 请确保文件路径正确
 
@@ -35,10 +37,10 @@ else
 fi
 
 install_yum() {
-    rm -rf /etc/yum.repos.d/CentOS*
+    /bin/rm -rf /etc/yum.repos.d/CentOS*
     curl -o /etc/yum.repos.d/aliyun-CentOS-7.repo http://mirrors.aliyun.com/repo/Centos-7.repo
     curl -o /etc/yum.repos.d/aliyun-epel-7.repo http://mirrors.aliyun.com/repo/epel-7.repo
-        
+
     cat >/etc/yum.repos.d/yum-public.repo <<EOF
 [yum-public-mariadb]
 name=YUM Public Repository
@@ -58,12 +60,18 @@ baseurl=https://mirrors.aliyun.com/centos/7/sclo/x86_64/rh/
 gpgkey = https://mirrors.aliyun.com/centos/RPM-GPG-KEY-CentOS-7
 enabled=1
 gpgcheck=0
+EOF
+
+    # nginx机器不需要设置
+    if [[ -z "$IS_NGINX" || "$IS_NGINX" == "false" ]]; then
+      cat >/etc/yum.repos.d/ambari.repo <<EOF
 [centos-ambari]
 name=centos-ambari
 baseurl=http://${NGINX_IP}/
 enabled=1
 gpgcheck=0
 EOF
+    fi
 
     yum clean all
     yum makecache

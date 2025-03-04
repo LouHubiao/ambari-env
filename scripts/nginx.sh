@@ -18,7 +18,10 @@
 set -ex
 
 # init env
-source /scripts/system/init/init_env.sh
+source /scripts/system/init/init_env.sh ture
+
+# setup git
+yum install -y git
 
 # setup jdk
 source /scripts/system/init/setup_nginx.sh

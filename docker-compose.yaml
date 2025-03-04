@@ -23,22 +23,34 @@ services:
   #     ambari-env-network:
   #       ipv4_address: 172.20.0.2
 
-  centos1:
+  nginx:
     image: centos:7.9.2009
-    container_name: centos1
-    hostname: centos1
+    container_name: nginx
+    hostname: nginx
     ports:
-      - "85:80"
-      - "22223:22"
-      - "28080:8080"
-      - "16379:6379"
-      - "16380:6380"
-      - "16381:6381"
-      - "16382:6382"
-      - "16383:6383"
-      - "16384:6384"
-      - "12181:2181"
-      - "12345:12345"
+      - "86:80"
+    volumes:
+      - ./scripts:/scripts
+      - ./common/data/rpm-package:/data/rpm-package
+    restart: always
+    tty: true
+    privileged: true
+    entrypoint: /scripts/nginx.sh
+    networks:
+      ambari-env-network:
+        ipv4_address: 172.20.0.10
+    healthcheck:
+      test: [ "CMD-SHELL", "test -f /scripts/.init_nginx_done" ]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+
+  valley1:
+    image: centos:7.9.2009
+    container_name: valley1
+    hostname: valley1
+    ports:
+      - "28088:8080"
     tty: true
     privileged: true
     volumes:
@@ -52,22 +64,12 @@ services:
         condition: service_healthy
     networks:
       ambari-env-network:
-        ipv4_address: 172.20.0.3
+        ipv4_address: 172.20.0.11
 
-  centos2:
+  valley2:
     image: centos:7.9.2009
-    container_name: centos2
-    hostname: centos2
-    ports:
-      - "22224:22"
-      - "26379:6379"
-      - "26380:6380"
-      - "26381:6381"
-      - "26382:6382"
-      - "26383:6383"
-      - "26384:6384"
-      - "22181:2181"
-      - "22345:12345"
+    container_name: valley2
+    hostname: valley2
     tty: true
     privileged: true
     volumes:
@@ -80,22 +82,12 @@ services:
         condition: service_healthy
     networks:
       ambari-env-network:
-        ipv4_address: 172.20.0.4
+        ipv4_address: 172.20.0.12
 
-  centos3:
+  valley3:
     image: centos:7.9.2009
-    container_name: centos3
-    hostname: centos3
-    ports:
-      - "22225:22"
-      - "36379:6379"
-      - "36380:6380"
-      - "36381:6381"
-      - "36382:6382"
-      - "36383:6383"
-      - "36384:6384"
-      - "32181:2181"
-      - "32345:12345"
+    container_name: valley3
+    hostname: valley3
     tty: true
     privileged: true
     volumes:
@@ -108,22 +100,12 @@ services:
         condition: service_healthy
     networks:
       ambari-env-network:
-        ipv4_address: 172.20.0.5
+        ipv4_address: 172.20.0.13
 
-  centos4:
+  valley4:
     image: centos:7.9.2009
-    container_name: centos4
-    hostname: centos4
-    ports:
-      - "22226:22"
-      - "46379:6379"
-      - "46380:6380"
-      - "46381:6381"
-      - "46382:6382"
-      - "46383:6383"
-      - "46384:6384"
-      - "42181:2181"
-      - "42345:12345"
+    container_name: valley4
+    hostname: valley4
     tty: true
     privileged: true
     volumes:
@@ -136,27 +118,7 @@ services:
         condition: service_healthy
     networks:
       ambari-env-network:
-        ipv4_address: 172.20.0.7
-
-  nginx:
-    image: centos:7.9.2009
-    container_name: nginx
-    hostname: nginx
-    volumes:
-      - ./scripts:/scripts
-      - ./common/data/rpm-package:/data/rpm-package
-    restart: always
-    tty: true
-    privileged: true
-    entrypoint: /scripts/nginx.sh
-    networks:
-      ambari-env-network:
-        ipv4_address: 172.20.0.6
-    healthcheck:
-      test: [ "CMD-SHELL", "test -f /scripts/.init_nginx_done" ]
-      interval: 30s
-      timeout: 10s
-      retries: 10
+        ipv4_address: 172.20.0.14
 networks:
   ambari-env-network:
     driver: bridge

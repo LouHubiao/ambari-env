@@ -36,6 +36,10 @@ services:
     tty: true
     privileged: true
     entrypoint: /scripts/nginx.sh
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     networks:
       ambari-env-network:
         ipv4_address: 172.20.0.10
@@ -59,6 +63,10 @@ services:
       - ./common/data/mvn:/root/.m2
       - ./common/data/rpm-package:/data/rpm-package
     entrypoint: /scripts/master.sh
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     depends_on:
       nginx:
         condition: service_healthy
@@ -77,6 +85,10 @@ services:
       - ./common/conf:/opt/modules/conf
       - ./common/data/mvn:/root/.m2
     entrypoint: /scripts/slave.sh
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     depends_on:
       nginx:
         condition: service_healthy
@@ -95,6 +107,10 @@ services:
       - ./common/conf:/opt/modules/conf
       - ./common/data/mvn:/root/.m2
     entrypoint: /scripts/slave.sh
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     depends_on:
       nginx:
         condition: service_healthy
@@ -113,6 +129,10 @@ services:
       - ./common/conf:/opt/modules/conf
       - ./common/data/mvn:/root/.m2
     entrypoint: /scripts/slave.sh
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
     depends_on:
       nginx:
         condition: service_healthy

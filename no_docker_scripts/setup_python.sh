@@ -61,6 +61,7 @@ main() {
                 # 清理安装文件
                 rm -f get-pip.py
             fi
+            python2 -m pip install PyMySQL
         "
     done
 }

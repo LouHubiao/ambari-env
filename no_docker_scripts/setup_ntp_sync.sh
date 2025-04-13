@@ -68,7 +68,8 @@ logdir /var/log/chrony
 EOL
 
   stop_existing_chronyd
-  sudo systemctl start chronyd
+  sudo systemctl start chrony
+  sudo systemctl enable chrony
   echo "++The Chrony server configuration is complete and has been started..."
 }
 
@@ -89,7 +90,8 @@ logdir /var/log/chrony
 EOL
   $(declare -f install_chrony); install_chrony
   $(declare -f stop_existing_chronyd); stop_existing_chronyd
-  sudo systemctl start chronyd"
+  sudo systemctl start chrony
+  sudo systemctl enable chrony"
   echo "++The Chrony client at $CLIENT_IP has been configured and started successfully..."
 }
 

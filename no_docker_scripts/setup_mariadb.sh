@@ -55,6 +55,7 @@ write_my_cnf() {
 [client]
 # 设置客户端默认字符集为utf8mb4
 default-character-set=utf8mb4
+socket=/var/lib/mysql/mysql.sock
 
 [mysqld]
 # 基本设置

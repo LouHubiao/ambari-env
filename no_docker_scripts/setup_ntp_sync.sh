@@ -92,7 +92,7 @@ EOL
   $(declare -f stop_existing_chronyd); stop_existing_chronyd
   sudo systemctl start chrony
   sudo systemctl enable chrony"
-  echo "++The Chrony client at $CLIENT_IP has been configured and started successfully..."
+  echo "++The Chrony client at $hostname has been configured and started successfully..."
 }
 
 # 验证Chrony客户端

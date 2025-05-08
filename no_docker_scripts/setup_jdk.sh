@@ -20,6 +20,28 @@ else
     exit 1
 fi
 
+# 配置 JAVA_HOME 函数
+configure_java_home() {
+    JDK_FILE_HOME_PATH="/usr/lib/jvm/java-8-openjdk-amd64"
+    # 使用 sed 命令更新或添加 JAVA_HOME 变量
+    if grep -q "^export JAVA_HOME=" /etc/profile; then
+        sudo sed -i "s#^export JAVA_HOME=.*#export JAVA_HOME=${JDK_FILE_HOME_PATH}#" /etc/profile
+    else
+        echo "export JAVA_HOME=${JDK_FILE_HOME_PATH}" | sudo tee -a /etc/profile
+    fi
+
+    # 更新 PATH 变量以包含 JAVA_HOME/bin
+    if ! grep -q "^export PATH=.*\$JAVA_HOME/bin" /etc/profile; then
+        echo "export PATH=\$PATH:\$JAVA_HOME/bin" | sudo tee -a /etc/profile
+    fi
+
+    # 重新加载 /etc/profile 文件以应用更改
+    source /etc/profile
+
+    # 验证 JAVA_HOME 设置
+    echo "JAVA_HOME is set to: $JAVA_HOME"
+}
+
 
 main() {
     for i in "${!HOSTNAMES[@]}"; do
@@ -33,6 +55,7 @@ main() {
             else
                 sudo apt install openjdk-8-jdk-headless -y
             fi
+            $(declare -f configure_java_home); configure_java_home
         "
     done
 }

@@ -27,9 +27,9 @@ if [[ -f "$FILE_PATH" ]]; then
     SERVER_HOSTNAME=$(echo "$line" | cut -d':' -f1)
     SERVER_USER=$(echo "$line" | cut -d':' -f2 | cut -d'@' -f1)
     SERVER_IP=$(echo "$line" | cut -d':' -f2 | cut -d'@' -f2)
-    echo "Server Hostname: $SERVER_HOSTNAME"
-    echo "Server User: $SERVER_USER"
-    echo "Server IP: $SERVER_IP"
+    # echo "Server Hostname: $SERVER_HOSTNAME"
+    # echo "Server User: $SERVER_USER"
+    # echo "Server IP: $SERVER_IP"
 else
     echo "++The file $FILE_PATH does not exist..."
     exit 1

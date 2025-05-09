@@ -10,20 +10,21 @@
 
 1. http://www.hdp.link/
 
-2. https://hub.docker.com/r/bigtop/slaves
-
 ---
 
 ## 版本说明
 
-- 适配环境
+- docker适配环境
   - centos 7.9.2009
   - jdk 1.8
   - python2
-
+- 非dockker适配环境
+  - ubuntu 22.04
+  - jdk 1.8
+  - python2
 ---
 
-## 安装步骤 🛠️
+## docker安装步骤 🛠️
 
 ### 1. 系统要求 📋
 
@@ -58,6 +59,18 @@ docker exec -it XXX /bin/bash
 ```bash
   source  /scripts/install/onekey_start.sh 
 ```
+
+## 非dokcer安装步骤
+
+前置条件：
+
+1. 系统为ubuntu22.04，集群配置免密登陆
+
+2. 修改no_docker_scripts/nodes和no_docker_scripts/server_node文件配置集群信息
+
+3. 下载hdp和ambari源至/usr/share/hdp/
+
+依次执行：setup_hosts.sh setup_basic.sh setup_jdk.sh setup_ntp_sync.sh setup_python.sh setup_nginx.sh setup_mariadb.sh setup_ambari.sh
 
 ---
 
